@@ -36,12 +36,15 @@ object SubList {
     subList(l1.tail, l2)
   )
  
-  // def subListTails[T](l1: List[T], l2: List[T]): Unit = {
-  //   require(!l1.isEmpty && !l2.isEmpty && l1.head == l2.head && subList(l1, l2))
+  def subListTails[T](l1: List[T], l2: List[T]): Unit = {
+    require(!l1.isEmpty && !l2.isEmpty && l1.head == l2.head && subList(l1, l2))
  
-  // }.ensuring(_ =>
-  //   subList(l1.tail, l2.tail)
-  // )
+    if(subList(l1, l2.tail)) {
+      subListTail(l1, l2.tail)
+    }
+  }.ensuring(_ =>
+    subList(l1.tail, l2.tail)
+  )
  
   // def subListTrans[T](l1: List[T], l2: List[T], l3: List[T]): Unit = {
   //   require(subList(l1, l2) && subList(l2, l3))
