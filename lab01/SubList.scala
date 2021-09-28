@@ -10,6 +10,7 @@ object SubList {
     case (Cons(x, xs), Cons(y, ys)) => (x == y && subList(xs, ys)) || subList(l1, ys)
   }
  
+  
   def subListRefl[T](l: List[T]): Unit = {
     if(!l.isEmpty) {
       subListRefl(l.tail)
@@ -74,16 +75,27 @@ object SubList {
     subList(l1, l3)
   )
  
-  // def subListLength[T](l1: List[T], l2: List[T]): Unit = {
-  //   require(subList(l1, l2))
- 
-  // }.ensuring(_ =>
-  //   l1.length <= l2.length
-  // )
+  def subListLength[T](l1: List[T], l2: List[T]): Unit = {
+    require(subList(l1, l2))
+
+    if(l1.isEmpty) {
+      assert(l1.length <= l2.length)
+    }
+    else if(subList(l1, l2.tail)) {
+      // Makes sure l1 is at the beggining of what's left of l2
+      subListLength(l1, l2.tail)
+    }
+    else {
+      // Take head off both lists
+      subListLength(l1.tail, l2.tail)
+    }
+  }.ensuring(_ =>
+    l1.length <= l2.length
+  )
  
   // def subListEqual[T](l1: List[T], l2: List[T]): Unit = {
   //   require(subList(l1, l2) && l1.length >= l2.length)
- 
+
   // }.ensuring(_ =>
   //   l1 == l2
   // )
