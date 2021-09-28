@@ -18,12 +18,23 @@ object SubList {
     subList(l, l)
   )
  
-  // def subListTail[T](l1: List[T], l2: List[T]): Unit = {
-  //   require(!l1.isEmpty && subList(l1, l2))
+  def subListTail[T](l1: List[T], l2: List[T]): Unit = {
+    require(!l1.isEmpty && subList(l1, l2))
  
-  // }.ensuring(_ =>
-  //   subList(l1.tail, l2)
-  // )
+    // Checking to be sure Stainless can reason about this
+    assert(!l2.isEmpty)
+
+    if(subList(l1, l2.tail)) {
+      subListTail(l1, l2.tail)
+    }
+    else {
+      // Works without else, but provides deeper insight
+      //  what Stainless is capable of
+      assert(l1.head == l2.head)
+    }
+  }.ensuring(_ =>
+    subList(l1.tail, l2)
+  )
  
   // def subListTails[T](l1: List[T], l2: List[T]): Unit = {
   //   require(!l1.isEmpty && !l2.isEmpty && l1.head == l2.head && subList(l1, l2))
