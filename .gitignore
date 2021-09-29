@@ -1,1 +1,4 @@
 **/.stainless-cache
+**.vscode
+**.metals
+**.scalafmt.conf
