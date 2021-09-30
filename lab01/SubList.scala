@@ -151,11 +151,9 @@ object SubList {
 
     subListLength(l2, l1)
     assert(l1.length >= l2.length)
-    
+
     subListEqual(l1, l2)
-  }.ensuring(_ =>
-    l1 == l2
-  )
+  }.ensuring(_ => l1 == l2)
 
   @extern
   def main(args: Array[String]): Unit = {
