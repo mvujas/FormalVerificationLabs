@@ -6,9 +6,12 @@ object Lab02 {
   def search(arr: Array[Int], x: Int, lo: Int, hi: Int): Boolean = {
     // Find the minimal set of preconditions
     require(
-      1 <= lo && lo < hi && hi <= arr.length
+      (lo < hi && 1 <= lo && hi < arr.length) ||
+        (lo == hi && lo < arr.length && 1 <= lo) ||
+        (lo == hi + 1 && 1 <= lo) ||
+        (lo + 1 == hi && hi < arr.length && 1 < hi)
     )
-    decreases(hi - lo) // Find the correct mesure
+    decreases(hi - lo + 1) // Find the correct mesure
     if (lo <= hi) {
       val i = lo + (hi - lo) / 2
       val y = arr(i)
