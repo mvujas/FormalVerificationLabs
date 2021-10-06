@@ -81,12 +81,12 @@ object Lab02 {
     require(isOrdered(t))
     t match {
       case Leaf()                                => ()
-      case Node(root, left, right) if (root > x) =>
-        // ???
-        assert(isOrdered(insert(t, x)))
-      case Node(root, left, right) if (x > root) =>
-        // ???
-        assert(isOrdered(insert(t, x)))
+      case Node(root, left, right) if (root > x) => 
+        forallAfterInsert(left, x, _  <= root) 
+        orderedAfterInsert(left, x)
+      case Node(root, left, right) if (x > root) => 
+        forallAfterInsert(right, x, _  >= root) 
+        orderedAfterInsert(right, x)
       case _ => ()
     }
   } ensuring (_ => isOrdered(insert(t, x)))
