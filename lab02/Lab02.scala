@@ -20,7 +20,7 @@ object Lab02 {
     }
   }
 
-  -------- Part 2 -------------
+  // -------- Part 2 -------------
 
   sealed abstract class Tree[T]
 
@@ -80,12 +80,12 @@ object Lab02 {
   def orderedAfterInsert(t: Tree[BigInt], x: BigInt): Unit = {
     require(isOrdered(t))
     t match {
-      case Leaf()                                => ()
-      case Node(root, left, right) if (root > x) => 
-        forallAfterInsert(left, x, _  <= root) 
+      case Leaf() => ()
+      case Node(root, left, right) if (root > x) =>
+        forallAfterInsert(left, x, _ <= root)
         orderedAfterInsert(left, x)
-      case Node(root, left, right) if (x > root) => 
-        forallAfterInsert(right, x, _  >= root) 
+      case Node(root, left, right) if (x > root) =>
+        forallAfterInsert(right, x, _ >= root)
         orderedAfterInsert(right, x)
       case _ => ()
     }
