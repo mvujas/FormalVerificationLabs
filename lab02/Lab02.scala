@@ -4,10 +4,13 @@ object Lab02 {
 
   // -------- Part 1 -------------
   def search(arr: Array[Int], x: Int, lo: Int, hi: Int): Boolean = {
-    require(true) // Find the minimal set of preconditions
-    decreases(-1) // Find the correct mesure
+    // Find the minimal set of preconditions
+    require(
+      1 <= lo && lo < hi && hi <= arr.length
+    )
+    decreases(hi - lo) // Find the correct mesure
     if (lo <= hi) {
-      val i = lo + hi
+      val i = lo + (hi - lo) / 2
       val y = arr(i)
       if (x == y) true
       else if (x < y) search(arr, x, lo, i - 1)
@@ -17,7 +20,7 @@ object Lab02 {
     }
   }
 
-  // -------- Part 2 -------------
+  -------- Part 2 -------------
 
   sealed abstract class Tree[T]
 
