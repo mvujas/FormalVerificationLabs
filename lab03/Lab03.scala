@@ -79,7 +79,23 @@ object Lab03 {
   /* Instantiating a variable can't make an evaluation ill-defined if it was well-defined */
   def instantiateStillDefinedLemma(env:Environment, f:Formula, id:Identifier, value:Boolean):Unit = {
     require(evaluate(env, f).isDefined)
-
+    f match {
+      case Variable(_) => assert(evaluate(env, instantiation(f, id, value)).isDefined)
+      case Literal(_) => assert(evaluate(env, instantiation(f, id, value)).isDefined)
+      case And(left, right) => {
+        instantiateStillDefinedLemma(env, left, id, value)
+        instantiateStillDefinedLemma(env, right, id, value)
+      }
+      case Or(left, right) => {
+        instantiateStillDefinedLemma(env, left, id, value)
+        instantiateStillDefinedLemma(env, right, id, value)
+      }
+      case Iff(left, right) => {
+        instantiateStillDefinedLemma(env, left, id, value)
+        instantiateStillDefinedLemma(env, right, id, value)
+      }
+      case Not(inner) => instantiateStillDefinedLemma(env, inner, id, value)
+    }
   }.ensuring(evaluate(env, instantiation(f, id, value)).isDefined)
 
   /* The case analysis proof step ( F, G ==> F[x:=1]\/G[y:=0] ) is sound */
