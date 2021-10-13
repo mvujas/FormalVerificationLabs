@@ -57,7 +57,23 @@ object Lab03 {
   /* Evaluation coincides with instantiation: evaluate(env, F) == evaluate(env, F[x:=env(x)] */
   def instantiationIdentityLemma(env:Environment, f:Formula, id:Identifier) :Unit = {
     require(env.contains(id) && evaluate(env, f).nonEmpty)
-
+    f match {
+      case Variable(_) => assert(evaluate(env, instantiation(f, id, env(id))) == evaluate(env, f))
+      case Literal(_) => assert(evaluate(env, instantiation(f, id, env(id))) == evaluate(env, f))
+      case And(left, right) => {
+        instantiationIdentityLemma(env, left, id)
+        instantiationIdentityLemma(env, right, id)
+      }
+      case Or(left, right) => {
+        instantiationIdentityLemma(env, left, id)
+        instantiationIdentityLemma(env, right, id)
+      }
+      case Iff(left, right) => {
+        instantiationIdentityLemma(env, left, id)
+        instantiationIdentityLemma(env, right, id)
+      }
+      case Not(inner) => instantiationIdentityLemma(env, inner, id)
+    }
   }.ensuring(evaluate(env, instantiation(f, id, env(id))) == evaluate(env, f))
 
   /* Instantiating a variable can't make an evaluation ill-defined if it was well-defined */
