@@ -102,6 +102,15 @@ object Lab03 {
   def caseAnalysisSoundness(env:Environment, f:Formula, g:Formula, id:Identifier):Unit = {
     require(env.contains(id) && evaluate(env, f)==Some(true) && evaluate(env, g)==Some(true))
 
+    if(env(id) == true) {
+      instantiationIdentityLemma(env, f, id)
+      assert(evaluate(env, instantiation(f, id, true)) == Some(true))
+    }
+    else {
+      instantiationIdentityLemma(env, g, id)
+      assert(evaluate(env, instantiation(g, id, false)) == Some(true))
+    }
+
   }.ensuring(evaluate(env, Or(instantiation(f, id, true), instantiation(g, id, false)))==Some(true))
 
 
