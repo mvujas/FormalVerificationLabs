@@ -2,8 +2,14 @@ import stainless.collection._
 import stainless.lang._
 import stainless.annotation._
 
+/**
+ *  The code has been validated using nativez3 solver, as well as smt-z3 solver on Stainless 0.9.0. Both
+ *    solvers were tested with the same arguments on Stainless version 0.9.1 as well, however they (occasionally?) 
+ *    produce timeouts on this version. Timeouts on nativez3 with Stainless 0.9.1 seem to appear with small 
+ *    probability from our testing, while they are consistent with smt-z3. All tests were run with cache being disabled.
+ *    This may be an indication of possible issues with this version of the software.
+ */
 object Lab03 {
-
 
   type Identifier = String
   type Environment = ListMap[Identifier, Boolean]
@@ -102,14 +108,21 @@ object Lab03 {
   def caseAnalysisSoundness(env:Environment, f:Formula, g:Formula, id:Identifier):Unit = {
     require(env.contains(id) && evaluate(env, f)==Some(true) && evaluate(env, g)==Some(true))
 
-    if(env(id) == true) {
+    // Stainless can't figure this out from the precondition (but it's needed for instantiateStillDefinedLemma)
+    assert(evaluate(env, f).isDefined)
+    assert(evaluate(env, g).isDefined)
+
+    if(env(id)) {
       instantiationIdentityLemma(env, f, id)
-      assert(evaluate(env, instantiation(f, id, true)) == Some(true))
+      instantiateStillDefinedLemma(env, g, id, false)
     }
     else {
       instantiationIdentityLemma(env, g, id)
-      assert(evaluate(env, instantiation(g, id, false)) == Some(true))
+      instantiateStillDefinedLemma(env, f, id, true)
     }
+    
+    assert(evaluate(env, instantiation(f, id, true)).isDefined)
+    assert(evaluate(env, instantiation(g, id, false)).isDefined)
 
   }.ensuring(evaluate(env, Or(instantiation(f, id, true), instantiation(g, id, false)))==Some(true))
 
