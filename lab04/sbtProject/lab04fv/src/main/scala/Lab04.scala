@@ -128,7 +128,25 @@ object Lab04 {
   Put the formula in negation normal form and then eliminates existential quantifiers using Skolemization
    */
   def skolemizationNegation(f: Formula):Formula = {
-    ???
+    var i: Int = 0
+    /* Performs skolemization formula that is already in negative normal form */
+    def skolemize(f: Formula, subst: Map[Var, Term] = Map()): Formula = f match {
+      case Predicate(name, terms) => Predicate(name, terms map { substitute(_, subst) })
+      case And(children) => And(children map { skolemize(_, subst) })
+      case Or(children) => Or(children map { skolemize(_, subst) })
+      case Neg(inner) => Neg(skolemize(inner, subst))
+      case Forall(variable, inner) => Forall(variable, skolemize(inner, subst))
+      case exists @ Exists(variable, inner) => {
+        i += 1
+        val freeVariableFunction: Term = Function(s"s$i", freeVariables(exists).toList)
+        val res = skolemize(inner, subst + (Var(variable) -> freeVariableFunction))
+        res
+      }
+
+      case Implies(_, _) => throw new Exception("Unexpected matching")
+    }
+
+    skolemize(negationNormalForm(f))
   }
 
   /*
@@ -245,6 +263,12 @@ object Lab04 {
       case And(subchildren) => subchildren
       case other => List(other)
     }))
+  }
+
+  def main(args: Array[String]): Unit = {
+    val f = Forall("x", Exists("y", R(x, y)))
+    println(f)
+    println(skolemizationNegation(f))
   }
 
 }

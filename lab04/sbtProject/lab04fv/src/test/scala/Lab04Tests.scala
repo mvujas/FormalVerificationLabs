@@ -11,7 +11,7 @@ class Lab04Tests extends FunSuite {
     assert(flatten(transformation(lhs_in)) == flatten(rhs))
   }
 
-  val flattenTest: (Formula, Formula) => Unit = applicationTest(x => x)
+  val flattenTest: (Formula, Formula) => Unit = applicationTest(identity)
   test("flattenAndTest") {
     val lhs_in = And(List(a, And(List(b, c))))
     val rhs = And(List(a, b, c))
@@ -63,5 +63,47 @@ class Lab04Tests extends FunSuite {
     ))
 
     negationNormalFormTest(lhs_in, rhs)
+  }
+
+
+  val skolemizationNegationTest: (Formula, Formula) => Unit = applicationTest(skolemizationNegation)
+  test("skolemizationNegationTest1") {
+    val (x, y) = (Lab04.x, Lab04.y)
+    val lhs_in: Formula = Forall("x", Exists("y", R(x, y)))
+    val rhs: Formula = Forall("x", R(x, Function("s1", List(x))))
+
+    skolemizationNegationTest(lhs_in, rhs)
+  }
+
+  test("skolemizationNegationTest2") {
+    val (x, y) = (Lab04.x, Lab04.y)
+    val lhs_in: Formula = Exists("x", Forall("y", Or(List(Neg(R(x, y)), Neg(P(y))))))
+    val rhs: Formula = Forall("y", Or(List(Neg(R(Function("s1", List()), y)), Neg(P(y)))))
+
+    skolemizationNegationTest(lhs_in, rhs)
+  }
+
+  test("skolemizationNegationTestBig") {
+    val (x, y, z, a) = (Lab04.x, Lab04.y, Lab04.z, Lab04.a)
+    val lhs_in: Formula = And(List(
+      Forall("x", Exists("y", R(x, y))),
+      Forall("x", Forall("y", Or(List(
+        Neg(R(x, y)), Forall("z", R(x, f(y, z))))
+      ))),
+      Forall("x", Or(List(P(x), P(f(x, a))))),
+      Exists("x", Forall("y", Or(List(
+        Neg(R(x, y)), Neg(P(y)))
+      )))
+    ))
+    val rhs: Formula = And(List(
+      Forall("x", R(x, Function("s1", List(x)))),
+      Forall("x", Forall("y", Or(List(
+        Neg(R(x, y)), Forall("z", R(x, f(y, z))))
+      ))),
+      Forall("x", Or(List(P(x), P(f(x, a))))),
+      Forall("y", Or(List(Neg(R(Function("s2", List()), y)), Neg(P(y)))))
+    ))
+
+    skolemizationNegationTest(lhs_in, rhs)
   }
 }
