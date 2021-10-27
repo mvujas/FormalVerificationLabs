@@ -142,7 +142,6 @@ object Lab04 {
         val res = skolemize(inner, subst + (Var(variable) -> freeVariableFunction))
         res
       }
-
       case Implies(_, _) => throw new Exception("Unexpected matching")
     }
 
@@ -154,7 +153,22 @@ object Lab04 {
   quantifiers and all variable names are unique, the matrix is equivalent to the whole formula.
    */
   def prenexSkolemizationNegation(f:Formula):Formula = {
-    ???
+    var i: Int = 0
+    /* Transforms formula in negative skolemized form so that all quantified variables have unique name */
+    def makeNamesUnique(f: Formula, subst: Map[Var, Term] = Map()): Formula = f match {
+      case Predicate(name, terms) => Predicate(name, terms map { substitute(_, subst) })
+      case And(children) => And(children map { makeNamesUnique(_, subst) })
+      case Or(children) => Or(children map { makeNamesUnique(_, subst) })
+      case Neg(inner) => Neg(makeNamesUnique(inner, subst))
+      case Forall(variable, inner) => {
+        i += 1
+        val uniqueVariableName = s"v$i"
+        Forall(uniqueVariableName, makeNamesUnique(inner, subst + (Var(variable) -> Var(uniqueVariableName))))
+      }
+      case Implies(_, _) | Exists(_, _) => throw new Exception("Unexpected matching")
+    }
+
+    makeNamesUnique(skolemizationNegation(f))
   }
 
   type Clause = List[Formula]
@@ -268,7 +282,7 @@ object Lab04 {
   def main(args: Array[String]): Unit = {
     val f = Forall("x", Exists("y", R(x, y)))
     println(f)
-    println(skolemizationNegation(f))
+    println(prenexSkolemizationNegation(f))
   }
 
 }
