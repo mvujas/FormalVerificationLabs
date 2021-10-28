@@ -131,7 +131,7 @@ object Lab04 {
     else
       f
 
-    reductor(f)
+    flatten(reductor(f))
   }
 
   /*
@@ -320,7 +320,7 @@ object Lab04 {
     // println(f)
     // println(prenexSkolemizationNegation(f))
 
-    println(negationNormalForm(exampleFromCourse))
+    println(prenexSkolemizationNegation(exampleFromCourse))
   }
 
 }
