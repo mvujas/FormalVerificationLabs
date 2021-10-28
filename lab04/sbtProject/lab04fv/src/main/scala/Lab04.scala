@@ -178,7 +178,30 @@ object Lab04 {
    */
   def conjunctionPrenexSkolemizationNegation(f: Formula): List[Clause] = {
     val prenex: Formula = prenexSkolemizationNegation(f)
-    ???
+
+    def removeUniversalQuantifiers(f: Formula): Formula = f match {
+      case And(children) => And(children map removeUniversalQuantifiers)
+      case Or(children)  => Or(children map removeUniversalQuantifiers)
+      case Neg(inner)    => Neg(removeUniversalQuantifiers(inner))
+      case Predicate(name, terms)  => Predicate(name, terms)
+      case Forall(variable, inner) => removeUniversalQuantifiers(inner)
+      case Implies(_, _)           => throw new Exception("Unexpected matching")
+      case exists @ Exists(variable, inner) =>
+        throw new Exception("Unexpected matching")
+    }
+
+    // indeed not sure if the case of Or(And(F, G), H) <-> And(Or(F, H), Or(G, H)) has been covered or not.
+    def conjunctiveNormalForm(f: Formula): List[Clause] = f match {
+      case And(children) =>
+        children.flatMap {
+          case Or(c) => List(c.toList)
+          case other => List(List(other))
+        }
+    }
+
+    val body = removeUniversalQuantifiers(prenex)
+    val cnf = conjunctiveNormalForm(body)
+    cnf
   }
   /*
   A clause in a proof is either assumed, i.e. it is part of the initial formula, or it is deduced from previous clauses.
@@ -320,7 +343,8 @@ object Lab04 {
     // println(f)
     // println(prenexSkolemizationNegation(f))
 
-    println(prenexSkolemizationNegation(exampleFromCourse))
+    // println(prenexSkolemizationNegation(exampleFromCourse))
+    println(conjunctionPrenexSkolemizationNegation(exampleFromCourse))
   }
 
 }
