@@ -160,7 +160,7 @@ object Lab04 {
         case Implies(_, _) => throw new Exception("Unexpected matching")
       }
 
-    skolemize(negationNormalForm(f))
+    flatten(skolemize(negationNormalForm(f)))
   }
 
   /*
@@ -343,8 +343,8 @@ object Lab04 {
     // println(f)
     // println(prenexSkolemizationNegation(f))
 
-    // println(prenexSkolemizationNegation(exampleFromCourse))
-    println(conjunctionPrenexSkolemizationNegation(exampleFromCourse))
+    println(prenexSkolemizationNegation(mansionMystery))
+    // println(conjunctionPrenexSkolemizationNegation(mansionMystery))
   }
 
 }
