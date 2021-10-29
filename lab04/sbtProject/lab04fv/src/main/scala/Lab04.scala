@@ -198,22 +198,23 @@ object Lab04 {
     def pushForallOutwards(f: Formula): Formula = f match {
       case p @ Predicate(_, _) => p
       case Neg(inner) => {
-        val (notFor, forAllWrapperConstructor) = extractOutterForalls(inner)
+        val (notFor, forAllWrapperConstructor) = extractOutterForalls(pushForallOutwards(inner))
         forAllWrapperConstructor(Neg(notFor))
       }
       case And(children) => {
-        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children)
+        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children map pushForallOutwards)
         forAllWrapperConstructor(And(notForChildren))
       }
       case Or(children) => {
-        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children)
+        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children map pushForallOutwards)
         forAllWrapperConstructor(Or(notForChildren))
       }
       case Forall(variable, inner) => Forall(variable, pushForallOutwards(inner))
       case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
     }
 
-    pushForallOutwards(makeVariableNamesUnique(skolemizationNegation(f)))
+    val intermediateNoPrenex = makeVariableNamesUnique(skolemizationNegation(f))
+    pushForallOutwards(intermediateNoPrenex)
   }
 
   type Clause = List[Formula]
@@ -384,14 +385,41 @@ object Lab04 {
       )
   }
 
+  /* Returns string representation of the given term */
+  def termToString(t: Term): String = t match {
+    case Var(name) => name
+    case Function(name, children) => if(children.isEmpty)
+          name
+        else
+          s"$name(${children.map(termToString).mkString(",")})"
+  }
+
+  /* Returns string representation of the given term */
+  def formulaToString(f: Formula): String = f match {
+    case Predicate(name, children) => termToString(Function(name, children))
+    case Forall(variable, inner) => s"∀$variable.${formulaToString(inner)}"
+    case Exists(variable, inner) => s"∃$variable.${formulaToString(inner)}"
+    case Implies(left, right) => s"(${formulaToString(left)}) → (${formulaToString(right)})"
+    case Neg(inner) => s"¬(${formulaToString(inner)})"
+    case And(children) => children.map(x => s"(${formulaToString(x)})").mkString(" ∧ ")
+    case Or(children) => children.map(x => s"(${formulaToString(x)})").mkString(" ∨ ")
+  }
+
+  /* Prints the given formula in math-like representation to the command line */
+  def printlnFormula(f: Formula): Unit = println(formulaToString(f))
 
   def main(args: Array[String]): Unit = {
-    val f = Forall("x", Forall("y", And(List(Forall("z", Neg(R(a, b))), Forall("m", Neg(P(b))), Forall("n", Neg(P(a)))))))
-    println(prenexSkolemizationNegation(f))
+    val f = Forall("x", Forall("y", And(List(Or(List(Neg(Exists("z", R(x, y))), Neg(P(a)))), Forall("m", Neg(P(b))), Forall("n", Neg(P(z)))))))
 
+    printlnFormula(f)
 
-
-    println(prenexSkolemizationNegation(mansionMystery))
+    printlnFormula(prenexSkolemizationNegation(f))
+//    println(prenexSkolemizationNegation(f))
+//
+//
+//    println("∀")
+//
+//    println(prenexSkolemizationNegation(mansionMystery))
   }
 
 }
