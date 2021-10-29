@@ -160,7 +160,7 @@ object Lab04 {
         case Implies(_, _) => throw new Exception("Unexpected matching")
       }
 
-    skolemize(negationNormalForm(f))
+    flatten(skolemize(negationNormalForm(f)))
   }
 
   /*
@@ -386,15 +386,12 @@ object Lab04 {
 
 
   def main(args: Array[String]): Unit = {
-    // val f = Forall("x", Exists("y", R(x, y)))
-    // println(f)
-    // println(prenexSkolemizationNegation(f))
-
-    // println(prenexSkolemizationNegation(exampleFromCourse))
-//    println(conjunctionPrenexSkolemizationNegation(exampleFromCourse))
-
     val f = Forall("x", Forall("y", And(List(Forall("z", Neg(R(a, b))), Forall("m", Neg(P(b))), Forall("n", Neg(P(a)))))))
     println(prenexSkolemizationNegation(f))
+
+
+
+    println(prenexSkolemizationNegation(mansionMystery))
   }
 
 }
