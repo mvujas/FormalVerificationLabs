@@ -237,11 +237,15 @@ object Lab04 {
         throw new Exception("Unexpected matching")
     }
 
-    // indeed not sure if the case of Or(And(F, G), H) <-> And(Or(F, H), Or(G, H)) has been covered or not.
     def conjunctiveNormalForm(f: Formula): List[Clause] = f match {
       case And(children) =>
         children.flatMap {
-          case Or(c) => List(c.toList)
+          case Or(c) =>
+            c match {
+              // given the logic of flatten, we can have such design?
+              case head :: List(And(tail)) => tail.map(x => List(head, x))
+              case _                       => List(c.toList)
+            }
           case other => List(List(other))
         }
     }
