@@ -167,8 +167,54 @@ object Lab04 {
   Return the matrix of f in negation normal, skolemized form and make sure variables are uniquely named. Since there are no existential
   quantifiers and all variable names are unique, the matrix is equivalent to the whole formula.
    */
-  def prenexSkolemizationNegation(f: Formula): Formula =
-    makeVariableNamesUnique(skolemizationNegation(f))
+  def prenexSkolemizationNegation(f: Formula): Formula = {
+    /* Extracts all outter foralls into a function returned as the second element of the resulting tupple, while the
+        first elemment of the tupple is the body of the innermost of the given foralls
+     */
+    def extractOutterForalls(f: Formula,
+          cummulativeForallConstructor: Formula => Formula = identity): (Formula, Formula => Formula) = f match {
+      case p @ Predicate(_, _) => (p, cummulativeForallConstructor)
+      case neg @ Neg(_) => (neg, cummulativeForallConstructor)
+      case and @ And(_) => (and, cummulativeForallConstructor)
+      case or @ Or(_) => (or, cummulativeForallConstructor)
+      case Forall(variable, inner) => extractOutterForalls(
+        inner, cummulativeForallConstructor.compose(Forall(variable, _)))
+    }
+
+    /* Applies extractOutterForalls on the all elements of the given list and returns a tupple whose first element
+        is the list of the repective first elements of the results of extractOutterForalls when applied to the list and
+        the second is the composition of the functions returned as the second element of applying extractOutterForalls
+        to each element
+     */
+    def extractOutterForallsFromList(fs: List[Formula]): (List[Formula], Formula => Formula) =
+      fs.map{extractOutterForalls(_)}
+        .foldRight((List[Formula](), identity[Formula](_))) { (current, acc) =>
+          (current._1 :: acc._1, current._2.compose(acc._2))
+        }
+
+    /* Transforms given formula which does not contain existential quantifiers nor implications, and has all
+        variables uniquely named into its prenex form
+     */
+    def pushForallOutwards(f: Formula): Formula = f match {
+      case p @ Predicate(_, _) => p
+      case Neg(inner) => {
+        val (notFor, forAllWrapperConstructor) = extractOutterForalls(inner)
+        forAllWrapperConstructor(Neg(notFor))
+      }
+      case And(children) => {
+        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children)
+        forAllWrapperConstructor(And(notForChildren))
+      }
+      case Or(children) => {
+        val (notForChildren, forAllWrapperConstructor) = extractOutterForallsFromList(children)
+        forAllWrapperConstructor(Or(notForChildren))
+      }
+      case Forall(variable, inner) => Forall(variable, pushForallOutwards(inner))
+      case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
+    }
+
+    pushForallOutwards(makeVariableNamesUnique(skolemizationNegation(f)))
+  }
 
   type Clause = List[Formula]
 
@@ -199,7 +245,7 @@ object Lab04 {
         }
     }
 
-    val body = removeUniversalQuantifiers(prenex)
+    val body = flatten(removeUniversalQuantifiers(prenex))
     val cnf = conjunctiveNormalForm(body)
     cnf
   }
@@ -338,13 +384,17 @@ object Lab04 {
       )
   }
 
+
   def main(args: Array[String]): Unit = {
     // val f = Forall("x", Exists("y", R(x, y)))
     // println(f)
     // println(prenexSkolemizationNegation(f))
 
     // println(prenexSkolemizationNegation(exampleFromCourse))
-    println(conjunctionPrenexSkolemizationNegation(exampleFromCourse))
+//    println(conjunctionPrenexSkolemizationNegation(exampleFromCourse))
+
+    val f = Forall("x", Forall("y", And(List(Forall("z", Neg(R(a, b))), Forall("m", Neg(P(b))), Forall("n", Neg(P(a)))))))
+    println(prenexSkolemizationNegation(f))
   }
 
 }
