@@ -214,7 +214,7 @@ object Lab04 {
     }
 
     val intermediateNoPrenex = makeVariableNamesUnique(skolemizationNegation(f))
-    pushForallOutwards(intermediateNoPrenex)
+    flatten(pushForallOutwards(intermediateNoPrenex))
   }
 
   type Clause = List[Formula]
@@ -223,32 +223,53 @@ object Lab04 {
   This may exponentially blowup the size in the formula in general.
   If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
    */
-  def conjunctionPrenexSkolemizationNegation(f: Formula): List[Clause] = {
+  def conjunctionPrenexSkolemizationNegationAlternative(f: Formula): List[Clause] = {
+    def excludeOutterFors(f: Formula): Formula = f match {
+      case Forall(_, inner) => excludeOutterFors(inner)
+      case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
+      case other => other
+    }
+
+    def product[A](curr: List[A], acc: List[List[A]]): List[List[A]] =
+      for(el <- curr; sub <- acc) yield el :: sub
+
+    def conjuctiveNormalTransformation(f: Formula): Formula = f match {
+      case p @ Predicate(_, _) => p
+      case Neg(inner) => Neg(conjuctiveNormalTransformation(inner))
+      case And(children) => {
+        val childrenResults = children map conjuctiveNormalTransformation
+        // Top level only flatten (flatten could be used instead, but this is optimization of it for the
+        //  given use-case
+        val finalChildren = childrenResults flatMap { _ match {
+          case And(subchildren) => subchildren
+          case other => List(other)
+        }}
+        And(finalChildren)
+      }
+      case Or(children) => {
+        val childrenResults = children map conjuctiveNormalTransformation
+        val extractedFormulas: List[List[Formula]] = childrenResults map { _ match {
+          case And(andChildren) => andChildren
+          case other => List(other)
+        }}
+        val andOrLists: List[List[Formula]] = extractedFormulas.foldRight(List(List[Formula]()))(product)
+        And(andOrLists map { Or(_) })
+      }
+      case Implies(_, _) | Forall(_, _) | Exists(_, _) => throw new Exception("Unexpected matching")
+    }
+
+
     val prenex: Formula = prenexSkolemizationNegation(f)
+    val prenexForsExcluded: Formula = excludeOutterFors(prenex)
 
-    def removeUniversalQuantifiers(f: Formula): Formula = f match {
-      case And(children) => And(children map removeUniversalQuantifiers)
-      case Or(children)  => Or(children map removeUniversalQuantifiers)
-      case Neg(inner)    => Neg(removeUniversalQuantifiers(inner))
-      case Predicate(name, terms)  => Predicate(name, terms)
-      case Forall(variable, inner) => removeUniversalQuantifiers(inner)
-      case Implies(_, _)           => throw new Exception("Unexpected matching")
-      case exists @ Exists(variable, inner) =>
-        throw new Exception("Unexpected matching")
+    conjuctiveNormalTransformation(prenexForsExcluded) match {
+      case And(children) => children map { _ match {
+        case Or(subchildren) => subchildren
+        case other => List(other)
+      }}
+      case Or(children) => List(children)
+      case other => List(List(other))
     }
-
-    // indeed not sure if the case of Or(And(F, G), H) <-> And(Or(F, H), Or(G, H)) has been covered or not.
-    def conjunctiveNormalForm(f: Formula): List[Clause] = f match {
-      case And(children) =>
-        children.flatMap {
-          case Or(c) => List(c.toList)
-          case other => List(List(other))
-        }
-    }
-
-    val body = flatten(removeUniversalQuantifiers(prenex))
-    val cnf = conjunctiveNormalForm(body)
-    cnf
   }
   /*
   A clause in a proof is either assumed, i.e. it is part of the initial formula, or it is deduced from previous clauses.
@@ -400,26 +421,50 @@ object Lab04 {
     case Forall(variable, inner) => s"∀$variable.${formulaToString(inner)}"
     case Exists(variable, inner) => s"∃$variable.${formulaToString(inner)}"
     case Implies(left, right) => s"(${formulaToString(left)}) → (${formulaToString(right)})"
-    case Neg(inner) => s"¬(${formulaToString(inner)})"
-    case And(children) => children.map(x => s"(${formulaToString(x)})").mkString(" ∧ ")
-    case Or(children) => children.map(x => s"(${formulaToString(x)})").mkString(" ∨ ")
+    case Neg(inner) => s"¬${formulaToString(inner)}"
+    case And(children) => {
+      val childrenStrings = children.map(x => s"${formulaToString(x)}")
+      if(childrenStrings.length == 0)
+        childrenStrings(0)
+      else
+        s"(${childrenStrings.mkString(" ∧ ")})"
+    }
+    case Or(children) => {
+      val childrenStrings = children.map(x => s"${formulaToString(x)}")
+      if(childrenStrings.length == 0)
+        childrenStrings(0)
+      else
+        s"(${childrenStrings.mkString(" ∨ ")})"
+    }
   }
 
   /* Prints the given formula in math-like representation to the command line */
   def printlnFormula(f: Formula): Unit = println(formulaToString(f))
 
+  def excludeOutterFors(f: Formula): Formula = f match {
+    case Forall(_, inner) => excludeOutterFors(inner)
+    case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
+    case other => other
+  }
+
   def main(args: Array[String]): Unit = {
-    val f = Forall("x", Forall("y", And(List(Or(List(Neg(Exists("z", R(x, y))), Neg(P(a)))), Forall("m", Neg(P(b))), Forall("n", Neg(P(z)))))))
-
-    printlnFormula(f)
-
-    printlnFormula(prenexSkolemizationNegation(f))
+//    val f = Forall("x", Forall("y", And(List(Or(List(Neg(Exists("z", R(x, y))), Neg(P(a)))), Forall("m", Neg(P(b))), Forall("n", Neg(P(z)))))))
+//
+//    printlnFormula(f)
+//
+//    printlnFormula(prenexSkolemizationNegation(f))
+//    printlnFormula(excludeOutterFors(prenexSkolemizationNegation(f)))
 //    println(prenexSkolemizationNegation(f))
 //
 //
 //    println("∀")
 //
-//    println(prenexSkolemizationNegation(mansionMystery))
+//    printlnFormula(prenexSkolemizationNegation(mansionMystery))
+
+    val f = Or(List(And(List(Predicate("F", List()), Predicate("G", List()))), And(List(Predicate("H", List()), Predicate("M", List()))), Predicate("N", List())))
+    printlnFormula(f)
+    println(conjunctionPrenexSkolemizationNegationAlternative(f))
+    println(conjunctionPrenexSkolemizationNegationAlternative(mansionMystery))
   }
 
 }
