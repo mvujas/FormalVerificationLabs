@@ -526,12 +526,13 @@ object Lab04 {
   /* Prints the given formula in math-like representation to the command line */
   def printlnFormula(f: Formula): Unit = println(formulaToString(f))
 
-
+  /* Returns the given substitution map as a human readable string */
   def substMapToString(substMap: Map[Var, Term]): String = {
     val entriesString = substMap.map{ case (v, t) => s"${termToString(v)} -> ${termToString(t)}"}
     s"{${ entriesString mkString ", " }}"
   }
 
+  /* Prints resolution proof in a fancy format like in the slides */
   def printProof(proof: ResolutionProof): Unit =
     for(((clause, justification), index) <- proof.zipWithIndex) {
       val (justificationPrefixString, justificationPostString) = justification match {
@@ -547,13 +548,17 @@ object Lab04 {
     }
 
   def main(args: Array[String]): Unit = {
-
+    /* Makes resolution proof with only assumptions out of given list of clauses such that each the assumptions tell
+        that the given clauses are true
+     */
     def makeAssumptionsOutOfClauses(clauses: List[Clause]): ResolutionProof =
       clauses map { (_, Assumed) }
 
+    // Set of assumptions from the text of the problem
     val mansionMysteryClaims: ResolutionProof =
       makeAssumptionsOutOfClauses(conjunctionPrenexSkolemizationNegation(mansionMystery))
 
+    // Mathematical properties that comes into help
     val additionalAssumptionsFormula = And(List(
       // equality commutation
       Forall("x", Forall("y", Implies(eq(Var("x"), Var("y")), eq(Var("y"), Var("x"))))),
@@ -561,12 +566,10 @@ object Lab04 {
       Forall("x", Forall("y", Forall("z", Implies(eq(Var("x"), Var("y")),
         Implies(killed(Var("x"), Var("z")), killed(Var("y"), Var("z")))))))
     ))
-
     val additionalAssumptions: ResolutionProof = makeAssumptionsOutOfClauses(
       conjunctionPrenexSkolemizationNegation(additionalAssumptionsFormula))
 
-    val conclusion: ResolutionProof = List((List(killed(a, a)), Deduced((0, 0), Map(x -> x))))
-
+    // Decution of the proof
     val intermediateSteps: ResolutionProof = List(
       (List(hates(a, a)), Deduced((10, 16), Map(Var("x5") -> a))),
       (List(Neg(hates(c, a))), Deduced((8, 19), Map(Var("x3") -> a))),
@@ -585,12 +588,15 @@ object Lab04 {
         Deduced((18, 26), Map(Var("x2") -> Function("s1", List()), Var("x3") -> c, Var("x4") -> a))),
     )
 
+    // Adds the three parts of the proof into a single one
     val proof = mansionMysteryClaims ++ additionalAssumptions ++ intermediateSteps
 
+    // Printing the whole proof
     println("Proof: ")
     printProof(proof)
     println()
 
+    // Checking validity of the proof
     println("Validity of the proof: " + checkResolutionProof(proof))
   }
 
