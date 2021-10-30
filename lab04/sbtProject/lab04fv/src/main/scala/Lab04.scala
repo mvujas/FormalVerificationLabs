@@ -222,46 +222,10 @@ object Lab04 {
   type Clause = List[Formula]
 
   /*
- This may exponentially blowup the size in the formula in general.
- If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
-  */
-  def conjunctionPrenexSkolemizationNegation(f: Formula): List[Clause] = {
-    val prenex: Formula = prenexSkolemizationNegation(f)
-
-    def removeUniversalQuantifiers(f: Formula): Formula = f match {
-      case And(children) => And(children map removeUniversalQuantifiers)
-      case Or(children)  => Or(children map removeUniversalQuantifiers)
-      case Neg(inner)    => Neg(removeUniversalQuantifiers(inner))
-      case Predicate(name, terms)  => Predicate(name, terms)
-      case Forall(variable, inner) => removeUniversalQuantifiers(inner)
-      case Implies(_, _)           => throw new Exception("Unexpected matching")
-      case exists @ Exists(variable, inner) =>
-        throw new Exception("Unexpected matching")
-    }
-
-    def conjunctiveNormalForm(f: Formula): List[Clause] = f match {
-      case And(children) =>
-        children.flatMap {
-          case Or(c) =>
-            c match {
-              // given the logic of flatten, we can have such design?
-              case head :: List(And(tail)) => tail.map(x => List(head, x))
-              case _                       => List(c.toList)
-            }
-          case other => List(List(other))
-        }
-    }
-
-    val body = flatten(removeUniversalQuantifiers(prenex))
-    val cnf = conjunctiveNormalForm(body)
-    cnf
-  }
-
-  /*
   This may exponentially blowup the size in the formula in general.
   If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
    */
-  def conjunctionPrenexSkolemizationNegationAlternative(f: Formula): List[Clause] = {
+  def conjunctionPrenexSkolemizationNegation(f: Formula): List[Clause] = {
     /* Removes forall quantifiers from the given formula which is assumed
         to be in prenex skolemized negative normal form
      */
@@ -561,34 +525,59 @@ object Lab04 {
 
   /* Prints the given formula in math-like representation to the command line */
   def printlnFormula(f: Formula): Unit = println(formulaToString(f))
-  
+
+
+  def substMapToString(substMap: Map[Var, Term]): String = {
+    val entriesString = substMap.map{ case (v, t) => s"${termToString(v)} -> ${termToString(t)}"}
+    s"{${ entriesString mkString ", " }}"
+  }
+
+  def printProof(proof: ResolutionProof): Unit =
+    for(((clause, justification), index) <- proof.zipWithIndex) {
+      val (justificationPrefixString, justificationPostString) = justification match {
+        case Assumed => ("", "")
+        case Deduced((_1, _2), subst) => (
+          s"(${_1.toString}, ${_2.toString}): ",
+          "\t\t\t\t" + substMapToString(subst)
+        )
+      }
+
+      val clauseString = clause map formulaToString mkString " ∨ "
+      println(s"$index. $justificationPrefixString$clauseString $justificationPostString")
+    }
 
   def main(args: Array[String]): Unit = {
-//    val f = Forall("x", Forall("y", And(List(Or(List(Neg(Exists("z", R(x, y))), Neg(P(a)))), Forall("m", Neg(P(b))), Forall("n", Neg(P(z)))))))
-//
-//    printlnFormula(f)
-//
-//    printlnFormula(prenexSkolemizationNegation(f))
-//    printlnFormula(excludeOutterFors(prenexSkolemizationNegation(f)))
-//    println(prenexSkolemizationNegation(f))
-//
-//
-//    println("∀")
-//
-//    printlnFormula(prenexSkolemizationNegation(mansionMystery))
 
-//    val f = Or(List(And(List(Predicate("F", List()), Predicate("G", List()))), And(List(Predicate("H", List()), Predicate("M", List()))), Predicate("N", List())))
+    def makeAssumptionsOutOfClauses(clauses: List[Clause]): ResolutionProof =
+      clauses map { (_, Assumed) }
 
-//    val f = Or(List(And(List(Predicate("F", List()), Predicate("A", List()))), Predicate("H", List())))
-//    printlnFormula(f)
-//    println(conjunctionPrenexSkolemizationNegation(f))
-//    println(conjunctionPrenexSkolemizationNegationAlternative(f))
-//    println(conjunctionPrenexSkolemizationNegationAlternative(mansionMystery))
+    val mansionMysteryClaims: ResolutionProof =
+      makeAssumptionsOutOfClauses(conjunctionPrenexSkolemizationNegation(mansionMystery))
 
-//    printlnFormula(exampleFromCourse)
-//
-//    println(conjunctionPrenexSkolemizationNegationAlternative(exampleFromCourse))
-//    println(exampleFromCourseResult)
+    val conclusion: ResolutionProof = List((List(killed(a, a)), Deduced((0, 0), Map(x -> x))))
+
+    val intermediateSteps: ResolutionProof = List(
+
+    )
+
+    val proof = mansionMysteryClaims ++ intermediateSteps //++ conclusion
+
+//    val proof = List(
+//      (List(R(x, s1(x))), Assumed),
+//      (List(Neg(R(x, y)), R(x, f(y, z))), Assumed),
+//      (List(P(x), P(f(x, a))), Assumed),
+//      (List(Neg(R(s2, y)), Neg(P(y))), Assumed),
+//      (List(R(x, f(s1(x), z))), Deduced((0, 1), Map(y -> s1(x)))),
+//      (List(Neg(P(s1(s2)))), Deduced((0, 3), Map(x -> s2, y -> s1(x)))),
+//      (List(P(f(s1(s2), a))), Deduced((2, 5), Map(x -> s1(s2)))),
+//      (List(Neg(R(s2, f(s1(s2), a)))), Deduced((3, 6), Map(y -> f(s1(s2), a))))
+//    )
+
+    println("Proof: ")
+    printProof(proof)
+    println()
+
+    println("Validity of the proof: " + checkResolutionProof(proof))
   }
 
 }
