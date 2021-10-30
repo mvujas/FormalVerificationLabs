@@ -554,24 +554,38 @@ object Lab04 {
     val mansionMysteryClaims: ResolutionProof =
       makeAssumptionsOutOfClauses(conjunctionPrenexSkolemizationNegation(mansionMystery))
 
+    val additionalAssumptionsFormula = And(List(
+      // equality commutation
+      Forall("x", Forall("y", Implies(eq(Var("x"), Var("y")), eq(Var("y"), Var("x"))))),
+      // Leibniz property
+      Forall("x", Forall("y", Forall("z", Implies(eq(Var("x"), Var("y")),
+        Implies(killed(Var("x"), Var("z")), killed(Var("y"), Var("z")))))))
+    ))
+
+    val additionalAssumptions: ResolutionProof = makeAssumptionsOutOfClauses(
+      conjunctionPrenexSkolemizationNegation(additionalAssumptionsFormula))
+
     val conclusion: ResolutionProof = List((List(killed(a, a)), Deduced((0, 0), Map(x -> x))))
 
     val intermediateSteps: ResolutionProof = List(
-
+      (List(hates(a, a)), Deduced((10, 16), Map(Var("x5") -> a))),
+      (List(Neg(hates(c, a))), Deduced((8, 19), Map(Var("x3") -> a))),
+      (List(eq(Function("s1", List()), a), eq(Function("s1", List()), b), eq(Function("s1", List()), c)),
+        Deduced((0, 5), Map(Var("x0") -> Function("s1", List())))),
+      (List(killed(Function("s1", List()), a), eq(Function("s1", List()), a), eq(Function("s1", List()), b),
+        eq(Function("s1", List()), c)), Deduced((1, 21), Map())),
+      (List(killed(a, a), eq(Function("s1", List()), b), eq(Function("s1", List()), c)),
+        Deduced((18, 22), Map(Var("x2") -> Function("s1", List()), Var("x3") -> a, Var("x4") -> a))),
+      (List(killed(a, a), killed(Function("s1", List()), a), eq(Function("s1", List()), b),
+        eq(Function("s1", List()), c)), Deduced((1, 23), Map())),
+      (List(killed(a, a), killed(b, a), eq(Function("s1", List()), c)),
+        Deduced((18, 24), Map(Var("x2") -> Function("s1", List()), Var("x3") -> b, Var("x4") -> a))),
+      (List(killed(a, a), killed(b, a), killed(Function("s1", List()), a), eq(Function("s1", List()), c)), Deduced((1, 25), Map())),
+      (List(killed(a, a), killed(b, a), killed(c, a)),
+        Deduced((18, 26), Map(Var("x2") -> Function("s1", List()), Var("x3") -> c, Var("x4") -> a))),
     )
 
-    val proof = mansionMysteryClaims ++ intermediateSteps //++ conclusion
-
-//    val proof = List(
-//      (List(R(x, s1(x))), Assumed),
-//      (List(Neg(R(x, y)), R(x, f(y, z))), Assumed),
-//      (List(P(x), P(f(x, a))), Assumed),
-//      (List(Neg(R(s2, y)), Neg(P(y))), Assumed),
-//      (List(R(x, f(s1(x), z))), Deduced((0, 1), Map(y -> s1(x)))),
-//      (List(Neg(P(s1(s2)))), Deduced((0, 3), Map(x -> s2, y -> s1(x)))),
-//      (List(P(f(s1(s2), a))), Deduced((2, 5), Map(x -> s1(s2)))),
-//      (List(Neg(R(s2, f(s1(s2), a)))), Deduced((3, 6), Map(y -> f(s1(s2), a))))
-//    )
+    val proof = mansionMysteryClaims ++ additionalAssumptions ++ intermediateSteps
 
     println("Proof: ")
     printProof(proof)
