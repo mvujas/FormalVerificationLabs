@@ -356,20 +356,21 @@ object Lab04 {
     }
 
     // Returns whether it is possible that there is an element in the list under given id (helper function)
-    def isIndexValid[A](l: List[A], id: Int): Boolean = id >= 0 && id < l.size
+    def isIndexValid[A](l: List[A], id: Int, upperBound: Int): Boolean = id >= 0 && id < Math.min(l.size, upperBound)
 
     // Returns whether the clause is valid under given justification
-    def isValid(clause: Clause, justification: Justification): Boolean = justification match {
+    def isValid(clause: Clause, justification: Justification, index: Int): Boolean = justification match {
       case Assumed => true
-      case Deduced((premice_id_1, premice_id_2), subst) => isIndexValid(proof, premice_id_1) &&
-        isIndexValid(proof, premice_id_2) &&
+      case Deduced((premice_id_1, premice_id_2), subst) => isIndexValid(proof, premice_id_1, index) &&
+        isIndexValid(proof, premice_id_2, index) &&
         isDeducible(proof(premice_id_1)._1, proof(premice_id_2)._1, subst, clause)
     }
 
     // Recursive way of looping through proofs and checking whether each of them is true
-    def checkRemainingProofs(proofRemainder: ResolutionProof): Boolean = proofRemainder match {
+    def checkRemainingProofs(proofRemainder: ResolutionProof, index: Int = 0): Boolean = proofRemainder match {
       case Nil => true
-      case (clause, justification) :: tail => isValid(clause, justification) && checkRemainingProofs(tail)
+      case (clause, justification) :: tail => isValid(clause, justification, index) &&
+        checkRemainingProofs(tail, index + 1)
     }
 
     checkRemainingProofs(proof)
