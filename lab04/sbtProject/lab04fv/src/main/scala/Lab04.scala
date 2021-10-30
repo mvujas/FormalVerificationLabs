@@ -569,7 +569,7 @@ object Lab04 {
     val additionalAssumptions: ResolutionProof = makeAssumptionsOutOfClauses(
       conjunctionPrenexSkolemizationNegation(additionalAssumptionsFormula))
 
-    // Decution of the proof
+    // Deduction of the conclusion
     val intermediateSteps: ResolutionProof = List(
       (List(hates(a, a)), Deduced((10, 16), Map(Var("x5") -> a))),
       (List(Neg(hates(c, a))), Deduced((8, 19), Map(Var("x3") -> a))),
