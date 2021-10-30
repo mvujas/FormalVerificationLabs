@@ -590,7 +590,7 @@ object Lab04 {
         Deduced((18, 24), Map(Var("x2") -> Function("s1", List()), Var("x3") -> b, Var("x4") -> a))),
       (List(killed(a, a), killed(b, a), killed(Function("s1", List()), a), eq(Function("s1", List()), c)), Deduced((1, 25), Map())),
       (List(killed(a, a), killed(b, a), killed(c, a)),
-        Deduced((18, 26), Map(Var("x2") -> Function("s1", List()), Var("x3") -> c, Var("x4") -> a))),
+        Deduced((18, 26), Map(Var("x2") -> Function("s1", List()), Var("x3") -> c, Var("x4") -> a)))
     )
 
     // Adds the three parts of the proof into a single one
