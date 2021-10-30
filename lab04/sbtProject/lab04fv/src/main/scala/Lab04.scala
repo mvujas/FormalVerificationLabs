@@ -220,6 +220,42 @@ object Lab04 {
   type Clause = List[Formula]
 
   /*
+ This may exponentially blowup the size in the formula in general.
+ If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
+  */
+  def conjunctionPrenexSkolemizationNegation(f: Formula): List[Clause] = {
+    val prenex: Formula = prenexSkolemizationNegation(f)
+
+    def removeUniversalQuantifiers(f: Formula): Formula = f match {
+      case And(children) => And(children map removeUniversalQuantifiers)
+      case Or(children)  => Or(children map removeUniversalQuantifiers)
+      case Neg(inner)    => Neg(removeUniversalQuantifiers(inner))
+      case Predicate(name, terms)  => Predicate(name, terms)
+      case Forall(variable, inner) => removeUniversalQuantifiers(inner)
+      case Implies(_, _)           => throw new Exception("Unexpected matching")
+      case exists @ Exists(variable, inner) =>
+        throw new Exception("Unexpected matching")
+    }
+
+    def conjunctiveNormalForm(f: Formula): List[Clause] = f match {
+      case And(children) =>
+        children.flatMap {
+          case Or(c) =>
+            c match {
+              // given the logic of flatten, we can have such design?
+              case head :: List(And(tail)) => tail.map(x => List(head, x))
+              case _                       => List(c.toList)
+            }
+          case other => List(List(other))
+        }
+    }
+
+    val body = flatten(removeUniversalQuantifiers(prenex))
+    val cnf = conjunctiveNormalForm(body)
+    cnf
+  }
+
+  /*
   This may exponentially blowup the size in the formula in general.
   If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
    */
@@ -240,24 +276,29 @@ object Lab04 {
         val childrenResults = children map conjuctiveNormalTransformation
         // Top level only flatten (flatten could be used instead, but this is optimization of it for the
         //  given use-case
-        val finalChildren = childrenResults flatMap { _ match {
-          case And(subchildren) => subchildren
-          case other => List(other)
-        }}
+        val finalChildren = childrenResults flatMap {
+          _ match {
+            case And(subchildren) => subchildren
+            case other => List(other)
+          }
+        }
         And(finalChildren)
       }
       case Or(children) => {
         val childrenResults = children map conjuctiveNormalTransformation
-        val extractedFormulas: List[List[Formula]] = childrenResults map { _ match {
-          case And(andChildren) => andChildren
-          case other => List(other)
-        }}
+        val extractedFormulas: List[List[Formula]] = childrenResults map {
+          _ match {
+            case And(andChildren) => andChildren
+            case other => List(other)
+          }
+        }
         val andOrLists: List[List[Formula]] = extractedFormulas.foldRight(List(List[Formula]()))(product)
-        And(andOrLists map { Or(_) })
+        And(andOrLists map {
+          Or(_)
+        })
       }
       case Implies(_, _) | Forall(_, _) | Exists(_, _) => throw new Exception("Unexpected matching")
     }
-
 
     val prenex: Formula = prenexSkolemizationNegation(f)
     val prenexForsExcluded: Formula = excludeOutterFors(prenex)
@@ -271,6 +312,7 @@ object Lab04 {
       case other => List(List(other))
     }
   }
+
   /*
   A clause in a proof is either assumed, i.e. it is part of the initial formula, or it is deduced from previous clauses.
   A proof is written in a specific order, and a justification should not refer to a previous step.
