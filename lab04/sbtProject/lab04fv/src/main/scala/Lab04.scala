@@ -181,6 +181,7 @@ object Lab04 {
       case or @ Or(_) => (or, cummulativeForallConstructor)
       case Forall(variable, inner) => extractOutterForalls(
         inner, cummulativeForallConstructor.compose(Forall(variable, _)))
+      case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
     }
 
     /* Applies extractOutterForalls on the all elements of the given list and returns a tupple whose first element
