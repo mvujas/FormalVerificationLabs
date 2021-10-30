@@ -510,6 +510,8 @@ object Lab04 {
     case And(children) => {
       val childrenStrings = children.map(x => s"${formulaToString(x)}")
       if(childrenStrings.length == 0)
+        ""
+      else if(childrenStrings.length == 1)
         childrenStrings(0)
       else
         s"(${childrenStrings.mkString(" ∧ ")})"
@@ -517,6 +519,8 @@ object Lab04 {
     case Or(children) => {
       val childrenStrings = children.map(x => s"${formulaToString(x)}")
       if(childrenStrings.length == 0)
+        ""
+      else if(childrenStrings.length == 1)
         childrenStrings(0)
       else
         s"(${childrenStrings.mkString(" ∨ ")})"
