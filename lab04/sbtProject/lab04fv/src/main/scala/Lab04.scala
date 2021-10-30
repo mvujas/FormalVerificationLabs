@@ -1,3 +1,5 @@
+
+
 object Lab04 {
 
   // Term syntax
@@ -260,20 +262,31 @@ object Lab04 {
   If we only preserve satisfiability, we can avoid it by introducing fresh predicates, but that is not asked here.
    */
   def conjunctionPrenexSkolemizationNegationAlternative(f: Formula): List[Clause] = {
+    /* Removes forall quantifiers from the given formula which is assumed
+        to be in prenex skolemized negative normal form
+     */
     def excludeOutterFors(f: Formula): Formula = f match {
       case Forall(_, inner) => excludeOutterFors(inner)
       case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
       case other => other
     }
 
+    /* Does Cartesian product on curr addition to it and an accumulator of previous products, i.e. curr can be seen as A,
+        while the accumulator could be seen as B1 X B2 X ... X Bm, the final result is A X B1 X B2 X ... X Bm. The
+        parameters are passed in the given way so that the function can work effortlessly with foldRight
+     */
     def product[A](curr: List[A], acc: List[List[A]]): List[List[A]] =
       for(el <- curr; sub <- acc) yield el :: sub
 
-    def conjuctiveNormalTransformation(f: Formula): Formula = f match {
+    /* Transforms the passed formula, assumed to be in prenex skolemized negative normal form without
+        forall quantifiers, into conjuctive normal form
+     */
+    def conjunctiveNormalTransformation(f: Formula): Formula = f match {
       case p @ Predicate(_, _) => p
-      case Neg(inner) => Neg(conjuctiveNormalTransformation(inner))
+      case Neg(inner) => Neg(conjunctiveNormalTransformation(inner))
       case And(children) => {
-        val childrenResults = children map conjuctiveNormalTransformation
+        // Make sure all children are in conjuctive normal form
+        val childrenResults = children map conjunctiveNormalTransformation
         // Top level only flatten (flatten could be used instead, but this is optimization of it for the
         //  given use-case
         val finalChildren = childrenResults flatMap {
@@ -285,7 +298,9 @@ object Lab04 {
         And(finalChildren)
       }
       case Or(children) => {
-        val childrenResults = children map conjuctiveNormalTransformation
+        // Make sure all children are in conjuctive normal form
+        val childrenResults = children map conjunctiveNormalTransformation
+        // The rest of the matching code pushes AND outwards, while putting OR inward
         val extractedFormulas: List[List[Formula]] = childrenResults map {
           _ match {
             case And(andChildren) => andChildren
@@ -303,7 +318,10 @@ object Lab04 {
     val prenex: Formula = prenexSkolemizationNegation(f)
     val prenexForsExcluded: Formula = excludeOutterFors(prenex)
 
-    conjuctiveNormalTransformation(prenexForsExcluded) match {
+    /* Transofrms formula to conjuctive normal form and extracts subformulas into lists as stated in the function
+        requirement
+    */
+    conjunctiveNormalTransformation(prenexForsExcluded) match {
       case And(children) => children map { _ match {
         case Or(subchildren) => subchildren
         case other => List(other)
@@ -329,7 +347,68 @@ object Lab04 {
 
    */
   def checkResolutionProof(proof: ResolutionProof): Boolean = {
-    ???
+    /* Tries substitution on the term multiple time until it no longer changes */
+    def substituteTermWhileYouCan(term: Term, subst: Map[Var, Term]): Term = {
+      val substitutionResult = substitute(term, subst)
+      if(term equals substitutionResult)
+        term
+      else
+        substituteTermWhileYouCan(substitutionResult, subst)
+    }
+
+    /* Substitute all terms in the formula according to the given substitution map */
+    def formulaWideSubstitution(f: Formula, subst: Map[Var, Term]): Formula = f match {
+      case Predicate(name, children) => Predicate(name, children map { substituteTermWhileYouCan(_, subst) })
+      case Neg(inner) => Neg(formulaWideSubstitution(inner, subst))
+      case And(_) | Or(_) | Implies(_, _) | Forall(_, _) | Exists(_, _) => throw new Exception("Unexpected matching")
+    }
+
+    /* Returns negation of the given formula */
+    def negate(f: Formula): Formula = f match {
+      case Neg(inner) => inner
+      case other => Neg(other)
+    }
+
+    /* Returns whether toDeduce clause can be obtained by substituting terms in premice_1 and premice_2 according
+        to the given substitution map and applying or between the clauses
+     */
+    def isDeducible(premice_1: Clause, premice_2: Clause, subst: Map[Var, Term], toDeduce: Clause): Boolean = {
+      /* substitute and negate the first premice. Negation is done only on this since if this premice contains negations
+          of the formulas in the second premice, by doing negation we would obtain same formulas as in the second premice
+          and that makes it possible to do set operations that nonsensitive on order of formulas in a clause
+       */
+      val premice_1SubstedNegated = premice_1.map{ x => negate(formulaWideSubstitution(x, subst)) }.toSet
+      // Only substitution is done on the second clause
+      val premice_2Substed = premice_2.map{ formulaWideSubstitution(_, subst) }.toSet
+
+      /* Do union of differences of both sides, but difference on the side of the first premise has
+          to be negated back to its original form
+       */
+      val resultingClauseSet = premice_1SubstedNegated.diff(premice_2Substed).map(negate).union(
+        premice_2Substed diff premice_1SubstedNegated
+      )
+      // make the clause that has to be deduced into a set and compare it with the resulting clause
+      toDeduce.toSet equals resultingClauseSet
+    }
+
+    // Returns whether it is possible that there is an element in the list under given id (helper function)
+    def isIndexValid[A](l: List[A], id: Int): Boolean = id >= 0 && id < l.size
+
+    // Returns whether the clause is valid under given justification
+    def isValid(clause: Clause, justification: Justification): Boolean = justification match {
+      case Assumed => true
+      case Deduced((premice_id_1, premice_id_2), subst) => isIndexValid(proof, premice_id_1) &&
+        isIndexValid(proof, premice_id_2) &&
+        isDeducible(proof(premice_id_1)._1, proof(premice_id_2)._1, subst, clause)
+    }
+
+    // Recursive way of looping through proofs and checking whether each of them is true
+    def checkRemainingProofs(proofRemainder: ResolutionProof): Boolean = proofRemainder match {
+      case Nil => true
+      case (clause, justification) :: tail => isValid(clause, justification) && checkRemainingProofs(tail)
+    }
+
+    checkRemainingProofs(proof)
   }
 
   val a = Function("a", Nil)
@@ -482,12 +561,7 @@ object Lab04 {
 
   /* Prints the given formula in math-like representation to the command line */
   def printlnFormula(f: Formula): Unit = println(formulaToString(f))
-
-  def excludeOutterFors(f: Formula): Formula = f match {
-    case Forall(_, inner) => excludeOutterFors(inner)
-    case Exists(_, _) | Implies(_, _) => throw new Exception("Unexpected matching")
-    case other => other
-  }
+  
 
   def main(args: Array[String]): Unit = {
 //    val f = Forall("x", Forall("y", And(List(Or(List(Neg(Exists("z", R(x, y))), Neg(P(a)))), Forall("m", Neg(P(b))), Forall("n", Neg(P(z)))))))
@@ -503,10 +577,18 @@ object Lab04 {
 //
 //    printlnFormula(prenexSkolemizationNegation(mansionMystery))
 
-    val f = Or(List(And(List(Predicate("F", List()), Predicate("G", List()))), And(List(Predicate("H", List()), Predicate("M", List()))), Predicate("N", List())))
-    printlnFormula(f)
-    println(conjunctionPrenexSkolemizationNegationAlternative(f))
-    println(conjunctionPrenexSkolemizationNegationAlternative(mansionMystery))
+//    val f = Or(List(And(List(Predicate("F", List()), Predicate("G", List()))), And(List(Predicate("H", List()), Predicate("M", List()))), Predicate("N", List())))
+
+//    val f = Or(List(And(List(Predicate("F", List()), Predicate("A", List()))), Predicate("H", List())))
+//    printlnFormula(f)
+//    println(conjunctionPrenexSkolemizationNegation(f))
+//    println(conjunctionPrenexSkolemizationNegationAlternative(f))
+//    println(conjunctionPrenexSkolemizationNegationAlternative(mansionMystery))
+
+//    printlnFormula(exampleFromCourse)
+//
+//    println(conjunctionPrenexSkolemizationNegationAlternative(exampleFromCourse))
+//    println(exampleFromCourseResult)
   }
 
 }

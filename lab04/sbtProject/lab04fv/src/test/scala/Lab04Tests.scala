@@ -106,4 +106,39 @@ class Lab04Tests extends FunSuite {
 
     skolemizationNegationTest(lhs_in, rhs)
   }
+
+
+
+  test("resolutionTestLectures") {
+    import Lab04._
+    val (x, y, z, a) = (Lab04.x, Lab04.y, Lab04.z, Lab04.a)
+    val proof = List(
+      (List(R(x, s1(x))), Assumed),
+      (List(Neg(R(x, y)), R(x, f(y, z))), Assumed),
+      (List(P(x), P(f(x, a))), Assumed),
+      (List(Neg(R(s2, y)), Neg(P(y))), Assumed),
+      (List(R(x, f(s1(x), z))), Deduced((0, 1), Map(y -> s1(x)))),
+      (List(Neg(P(s1(s2)))), Deduced((0, 3), Map(x -> s2, y -> s1(x)))),
+      (List(P(f(s1(s2), a))), Deduced((2, 5), Map(x -> s1(s2)))),
+      (List(Neg(R(s2, f(s1(s2), a)))), Deduced((3, 6), Map(y -> f(s1(s2), a))))
+    )
+    // No clue how to represent false...
+    assert(checkResolutionProof(proof))
+  }
+
+  test("resolutionTestLecturesModifiedToBeIncorrect") {
+    import Lab04._
+    val (x, y, z, a) = (Lab04.x, Lab04.y, Lab04.z, Lab04.a)
+    val proof = List(
+      (List(R(x, s1(x))), Assumed),
+      (List(Neg(R(x, y)), R(x, f(y, z))), Assumed),
+      (List(P(x), P(f(x, a))), Assumed),
+      (List(Neg(R(s2, y)), Neg(P(y))), Assumed),
+      (List(R(x, f(s1(x), z))), Deduced((0, 1), Map(y -> s1(s2)))),
+      (List(Neg(P(s1(s2)))), Deduced((0, 3), Map(x -> s2, y -> s1(x)))),
+      (List(P(f(s1(s2), a))), Deduced((2, 5), Map(x -> s1(a)))),
+      (List(Neg(R(s2, f(s1(s2), a)))), Deduced((3, 6), Map(y -> f(s1(s2), a))))
+    )
+    assert(!checkResolutionProof(proof))
+  }
 }
