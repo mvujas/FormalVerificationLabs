@@ -58,4 +58,26 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
         case _ => Node(delMin(ll), a, Node(lr, b, r))
       }
     }
+
+
+  private def treeSet[T](tree: Tree[T]): Set[T] = tree match {
+    case Leaf() => Set.empty[T]
+    case Node(l, v, r) => Set(v) ++ treeSet(l) ++ treeSet(r)
+  }
+
+  private def isBinarySearchTree(tree: Tree[T])(implicit ord: Ordering[T]):
+      Boolean = tree match {
+    case Leaf() => true
+    case Node(l, v, r) => isBinarySearchTree(l) && isBinarySearchTree(r) &&
+      {
+        // Abuse of Scala syntax since stainless.collection.setForall cannot be
+        //  imported
+        val leftSide: Set[T] = treeSet(l)
+        forall { (el: T) => leftSide.contains(el) ==> ord.compare(el, v) <= 0 }
+      } &&
+      {
+        val rightSide: Set[T] = treeSet(r)
+        forall { (el: T) => rightSide.contains(el) ==> ord.compare(el, v) >= 0 }
+      }
+  }
 }
