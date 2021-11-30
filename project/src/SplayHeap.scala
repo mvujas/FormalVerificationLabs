@@ -1,12 +1,61 @@
 import stainless.lang._
+import stainless.annotation._
 
+// This gimick required as Stainless doesn't allow mutable variables out
+//  of functions or class instantiations...
+case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
 
-case class SplayHeap[T](ordering: Ordering[T]) extends Heap[T] {
-  override def insert(element: T): Unit = {
-
+  override def insert(element: T)(implicit ord: Ordering[T]): Unit = {
+    tree = insert(element, tree)(ord)
   }
 
-  override def delMin(): Option[T] = {
+  // Will have to change delMin(Tree[T]) to make it work with this
+  //  Maybe split it into delMin and getMin or something like that
+  override def delMin()(implicit ord: Ordering[T]): Option[T] = {
     None[T]
   }
+
+  // Reports failure due to not knowing whether the function terminates.
+  //  Weirdly, sometimes it can infer by itself in my runs...
+  private def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
+        (Tree[T], Tree[T]) = tree match {
+    case Leaf() => (Leaf(), Leaf())
+    case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => ar match {
+      case Leaf() => (aTree, Leaf())
+      case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
+        val (pl, y) = partition(p, br)
+        (Node(Node(al, a, bl), b, pl), y)
+      }
+      case Node(bl, b, br) => {
+        val (pl, pr) = partition(p, bl)
+        (Node(al, a, pl), Node(pr, b, br))
+      }
+    }
+    case aTree @ Node(al, a, ar) => al match {
+      case Leaf() => (Leaf(), aTree)
+      case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
+        val (pl, pr) = partition(p, br)
+        (Node(bl, b, pl), Node(pr, a, ar))
+      }
+      case Node(bl, b, br) => {
+        val (pl, pr) = partition(p, bl)
+        (pl, Node(pr, b, Node(br, a, ar)))
+      }
+    }
+  }
+
+  private def insert[T](x: T, h: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
+    partition(x, h)(ord) match {
+      case (l, r) => Node(l, x, r)
+    }
+
+  private def delMin[T](t: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
+    t match {
+      case Leaf() => Leaf()
+      case Node(Leaf(), uu, r) => r
+      case Node(Node(ll, a, lr), b, r) => ll match {
+        case Leaf() => Node(lr, b, r)
+        case _ => Node(delMin(ll), a, Node(lr, b, r))
+      }
+    }
 }
