@@ -4,70 +4,69 @@ import StainlessUtils._
 
 // This gimick required as Stainless doesn't allow mutable variables out
 //  of functions or class instantiations...
-case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
+case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends CustomHeap[T] {
 
   override def insert(element: T)(implicit ord: Ordering[T]): Unit = {
+    require(isBinarySearchTree(tree))
     tree = insert(element, tree)(ord)
   }
 
   // Will have to change delMin(Tree[T]) to make it work with this
   //  Maybe split it into delMin and getMin or something like that
   override def delMin()(implicit ord: Ordering[T]): Option[T] = {
-    None[T]
+    None[T]()
   }
 
   // Reports failure due to not knowing whether the function terminates.
   //  Weirdly, sometimes it can infer by itself in my runs...
-  private def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
-        (Tree[T], Tree[T]) = {
-    // require(isBinarySearchTree(tree))
+  //  Also fulling full tuple2 constructor recommended as Stainless complains
+  //    otherwise.
+  private def partition(p: T, tree: Tree[T])(implicit ord: Ordering[T]):
+        (Tree[T], Tree[T]) = ({
+    require(isBinarySearchTree(tree))
     tree match {
-      case Leaf() => (Leaf(), Leaf())
+      case Leaf() => Tuple2[Tree[T], Tree[T]](Leaf(), Leaf())
       case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => ar match {
-        case Leaf() => (aTree, Leaf())
+        case Leaf() => Tuple2[Tree[T], Tree[T]](aTree, Leaf())
         case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
           val (pl, y) = partition(p, br)
-          (Node(Node(al, a, bl), b, pl), y)
+          Tuple2[Tree[T], Tree[T]](Node(Node(al, a, bl), b, pl), y)
         }
         case Node(bl, b, br) => {
           val (pl, pr) = partition(p, bl)
-          (Node(al, a, pl), Node(pr, b, br))
+          Tuple2[Tree[T], Tree[T]](Node(al, a, pl), Node(pr, b, br))
         }
       }
       case aTree @ Node(al, a, ar) => al match {
-        case Leaf() => (Leaf(), aTree)
+        case Leaf() => Tuple2[Tree[T], Tree[T]](Leaf(), aTree)
         case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
           val (pl, pr) = partition(p, br)
-          (Node(bl, b, pl), Node(pr, a, ar))
+          Tuple2[Tree[T], Tree[T]](Node(bl, b, pl), Node(pr, a, ar))
         }
         case Node(bl, b, br) => {
           val (pl, pr) = partition(p, bl)
-          (pl, Node(pr, b, Node(br, a, ar)))
+          Tuple2[Tree[T], Tree[T]](pl, Node(pr, b, Node(br, a, ar)))
         }
       }
     }
+  }) ensuring {
+    res => {
+      isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
+      setForall(treeSet(res._1), (el: T) => ord.compare(el, p) <= 0) &&
+      setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0)
+    }
   }
-  //  ensuring {
-  //   (res: (Tree[T], Tree[T])) => {
-  //     isBinarySearchTree(res._1) && isBinarySearchTree(res._2)
-  //   }
-  // }
-  //   {
-  //     val res1Set = treeSet(res._1)
-  //     forall { (el: T) => res1Set.contains(el) ==> ord.compare(el, p) <= 0}
-  //   } &&
-  //   {
-  //     val res2Set = treeSet(res._2)
-  //     forall { (el: T) => res2Set.contains(el) ==> ord.compare(el, p) >= 0}
-  //   }
-  // )
 
-  private def insert[T](x: T, h: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
+  private def insert(x: T, h: Tree[T])(implicit ord: Ordering[T]): Tree[T] = {
+    require(isBinarySearchTree(tree)(ord))
+
     partition(x, h)(ord) match {
       case (l, r) => Node(l, x, r)
     }
+  } ensuring (isBinarySearchTree(_))
 
-  private def delMin[T](t: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
+
+  private def delMin(t: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
     t match {
       case Leaf() => Leaf()
       case Node(Leaf(), uu, r) => r
@@ -78,12 +77,12 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
     }
 
 
-  private def treeSet[T](tree: Tree[T]): Set[T] = tree match {
+  private def treeSet(tree: Tree[T]): Set[T] = tree match {
     case Leaf() => Set.empty[T]
     case Node(l, v, r) => Set(v) ++ treeSet(l) ++ treeSet(r)
   }
 
-  private def isBinarySearchTree[T](tree: Tree[T])(implicit ord: Ordering[T]):
+  private def isBinarySearchTree(tree: Tree[T])(implicit ord: Ordering[T]):
       Boolean = tree match {
     case Leaf() => true
     case Node(l, v, r) => isBinarySearchTree(l) && isBinarySearchTree(r) &&
@@ -92,7 +91,7 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
   }
 
   // Useful example
-  private def treeSubset[T](t: Tree[T])(implicit ord: Ordering[T]): Unit = {
+  private def treeSubset(t: Tree[T])(implicit ord: Ordering[T]): Unit = {
     require(isBinarySearchTree(t)(ord))
     t match {
       case Node(l, v, r) => {
