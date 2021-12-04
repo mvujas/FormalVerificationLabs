@@ -1,5 +1,6 @@
 import stainless.lang._
 import stainless.annotation._
+import StainlessUtils._
 
 // This gimick required as Stainless doesn't allow mutable variables out
 //  of functions or class instantiations...
@@ -18,31 +19,48 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
   // Reports failure due to not knowing whether the function terminates.
   //  Weirdly, sometimes it can infer by itself in my runs...
   private def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
-        (Tree[T], Tree[T]) = tree match {
-    case Leaf() => (Leaf(), Leaf())
-    case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => ar match {
-      case Leaf() => (aTree, Leaf())
-      case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
-        val (pl, y) = partition(p, br)
-        (Node(Node(al, a, bl), b, pl), y)
+        (Tree[T], Tree[T]) = {
+    // require(isBinarySearchTree(tree))
+    tree match {
+      case Leaf() => (Leaf(), Leaf())
+      case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => ar match {
+        case Leaf() => (aTree, Leaf())
+        case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
+          val (pl, y) = partition(p, br)
+          (Node(Node(al, a, bl), b, pl), y)
+        }
+        case Node(bl, b, br) => {
+          val (pl, pr) = partition(p, bl)
+          (Node(al, a, pl), Node(pr, b, br))
+        }
       }
-      case Node(bl, b, br) => {
-        val (pl, pr) = partition(p, bl)
-        (Node(al, a, pl), Node(pr, b, br))
-      }
-    }
-    case aTree @ Node(al, a, ar) => al match {
-      case Leaf() => (Leaf(), aTree)
-      case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
-        val (pl, pr) = partition(p, br)
-        (Node(bl, b, pl), Node(pr, a, ar))
-      }
-      case Node(bl, b, br) => {
-        val (pl, pr) = partition(p, bl)
-        (pl, Node(pr, b, Node(br, a, ar)))
+      case aTree @ Node(al, a, ar) => al match {
+        case Leaf() => (Leaf(), aTree)
+        case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
+          val (pl, pr) = partition(p, br)
+          (Node(bl, b, pl), Node(pr, a, ar))
+        }
+        case Node(bl, b, br) => {
+          val (pl, pr) = partition(p, bl)
+          (pl, Node(pr, b, Node(br, a, ar)))
+        }
       }
     }
   }
+  //  ensuring {
+  //   (res: (Tree[T], Tree[T])) => {
+  //     isBinarySearchTree(res._1) && isBinarySearchTree(res._2)
+  //   }
+  // }
+  //   {
+  //     val res1Set = treeSet(res._1)
+  //     forall { (el: T) => res1Set.contains(el) ==> ord.compare(el, p) <= 0}
+  //   } &&
+  //   {
+  //     val res2Set = treeSet(res._2)
+  //     forall { (el: T) => res2Set.contains(el) ==> ord.compare(el, p) >= 0}
+  //   }
+  // )
 
   private def insert[T](x: T, h: Tree[T])(implicit ord: Ordering[T]): Tree[T] =
     partition(x, h)(ord) match {
@@ -69,16 +87,8 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
       Boolean = tree match {
     case Leaf() => true
     case Node(l, v, r) => isBinarySearchTree(l) && isBinarySearchTree(r) &&
-      {
-        // Abuse of Scala syntax since stainless.collection.setForall cannot be
-        //  imported
-        val leftSide: Set[T] = treeSet(l)
-        forall { (el: T) => leftSide.contains(el) ==> ord.compare(v, el) >= 0 }
-      } &&
-      {
-        val rightSide: Set[T] = treeSet(r)
-        forall { (el: T) => rightSide.contains(el) ==> ord.compare(el, v) >= 0 }
-      }
+      setForall(treeSet(l), (el: T) => ord.compare(v, el) >= 0) &&
+      setForall(treeSet(r), (el: T) => ord.compare(el, v) >= 0)
   }
 
   // Useful example
