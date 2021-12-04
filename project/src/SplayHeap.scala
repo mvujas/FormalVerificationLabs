@@ -65,7 +65,7 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
     case Node(l, v, r) => Set(v) ++ treeSet(l) ++ treeSet(r)
   }
 
-  private def isBinarySearchTree(tree: Tree[T])(implicit ord: Ordering[T]):
+  private def isBinarySearchTree[T](tree: Tree[T])(implicit ord: Ordering[T]):
       Boolean = tree match {
     case Leaf() => true
     case Node(l, v, r) => isBinarySearchTree(l) && isBinarySearchTree(r) &&
@@ -80,4 +80,35 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
         forall { (el: T) => rightSide.contains(el) ==> ord.compare(el, v) >= 0 }
       }
   }
+
+  private def treeSubset[T](t: Tree[T])(implicit ord: Ordering[T]): Unit = {
+    require(isBinarySearchTree(t)(ord))
+    t match {
+      case n @ Node(l, v, r) => {
+        val nSet = treeSet(n)
+        val lSet = treeSet(l)
+        val rSet = treeSet(r)
+        assert(forall {
+          (lEl: T, rEl: T) => (lSet.contains(lEl) && rSet.contains(rEl)) ==> {
+            assert(ord.compare(lEl, v) <= 0)
+            assert(ord.compare(rEl, v) >= 0)
+            true
+          }
+        })
+
+        // assert(forall {
+        //   (el: T) => lSet.contains(el) ==> nSet.contains(el)
+        // })
+        //
+        // assert(forall {
+        //   (el: T) => lSet.contains(el) ==> forall{
+        //     (rEl: T) => rSet.contains(rEl) ==> ord.compare(rEl, el) >= 0
+        //   }
+        // })
+      }
+      case other => ()
+    }
+  }
+
+
 }
