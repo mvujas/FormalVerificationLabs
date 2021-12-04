@@ -73,7 +73,7 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
         // Abuse of Scala syntax since stainless.collection.setForall cannot be
         //  imported
         val leftSide: Set[T] = treeSet(l)
-        forall { (el: T) => leftSide.contains(el) ==> ord.compare(el, v) <= 0 }
+        forall { (el: T) => leftSide.contains(el) ==> ord.compare(v, el) >= 0 }
       } &&
       {
         val rightSide: Set[T] = treeSet(r)
@@ -81,30 +81,21 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends Heap[T] {
       }
   }
 
+  // Useful example
   private def treeSubset[T](t: Tree[T])(implicit ord: Ordering[T]): Unit = {
     require(isBinarySearchTree(t)(ord))
     t match {
-      case n @ Node(l, v, r) => {
-        val nSet = treeSet(n)
+      case Node(l, v, r) => {
         val lSet = treeSet(l)
         val rSet = treeSet(r)
         assert(forall {
           (lEl: T, rEl: T) => (lSet.contains(lEl) && rSet.contains(rEl)) ==> {
-            assert(ord.compare(lEl, v) <= 0)
-            assert(ord.compare(rEl, v) >= 0)
-            true
+            ord.nonStrictTransitivityLemma(rEl, v, lEl)
+            ord.compare(v, lEl) >= 0 && ord.compare(rEl, v) >= 0 &&
+              ord.compare(rEl, lEl) >= 0
+
           }
         })
-
-        // assert(forall {
-        //   (el: T) => lSet.contains(el) ==> nSet.contains(el)
-        // })
-        //
-        // assert(forall {
-        //   (el: T) => lSet.contains(el) ==> forall{
-        //     (rEl: T) => rSet.contains(rEl) ==> ord.compare(rEl, el) >= 0
-        //   }
-        // })
       }
       case other => ()
     }

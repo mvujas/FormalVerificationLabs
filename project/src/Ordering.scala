@@ -40,7 +40,7 @@ trait Ordering[T] {
   } ensuring (_ => compare(y, x) <= 0)
 
 
-  def nonStrictTransitivityyLemma(x: T, y: T, z: T): Unit = {
+  def nonStrictTransitivityLemma(x: T, y: T, z: T): Unit = {
     require(compare(x, y) >= 0)
     require(compare(y, z) >= 0)
 
