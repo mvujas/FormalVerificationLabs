@@ -34,10 +34,15 @@ trait Ordering[T] {
     assert(inverse(x, y))
   } ensuring (_ => compare(y, x) < 0)
 
-  def monotonicInverseLemma(x: T, y: T): Unit = {
+  def monotonicInverseLemmaGreater(x: T, y: T): Unit = {
     require(compare(x, y) >= 0)
     assert(inverse(x, y))
   } ensuring (_ => compare(y, x) <= 0)
+
+  def monotonicInverseLemmaSmaller(x: T, y: T): Unit = {
+    require(compare(x, y) <= 0)
+    assert(inverse(x, y))
+  } ensuring (_ => compare(y, x) >= 0)
 
 
   def nonStrictTransitivityLemma(x: T, y: T, z: T): Unit = {
