@@ -2,6 +2,7 @@ import stainless.lang._
 import stainless.annotation._
 import stainless.proof._
 import StainlessUtils._
+import Trees._
 
 // This gimick required as Stainless doesn't allow mutable variables out
 //  of functions or class instantiations...
@@ -142,11 +143,6 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends CustomHeap[T] {
     }
   }
 
-  // private def treeOrderingTransitivity(tree: Tree[T], p: T)(implicit ord: Ordering[T]): Unit = {
-  //   require(tree != Leaf())
-  //
-  // }
-
   private def insert(x: T, h: Tree[T])(implicit ord: Ordering[T]): Tree[T] = {
     require(isBinarySearchTree(h))
     val (l, r) = partition(x, h)
@@ -197,39 +193,6 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends CustomHeap[T] {
   } ensuring (res => {
     isBinarySearchTree(res) && (treeSet(res) subsetOf treeSet(t))
   })
-
-  private def treeSet(tree: Tree[T]): Set[T] = tree match {
-    case Leaf() => Set.empty[T]
-    case Node(l, v, r) => Set(v) ++ treeSet(l) ++ treeSet(r)
-  }
-
-  private def isBinarySearchTree(tree: Tree[T])(implicit ord: Ordering[T]):
-      Boolean = tree match {
-    case Leaf() => true
-    case Node(l, v, r) => isBinarySearchTree(l) && isBinarySearchTree(r) &&
-      setForall(treeSet(l), (el: T) => ord.compare(v, el) >= 0) &&
-      setForall(treeSet(r), (el: T) => ord.compare(el, v) >= 0)
-  }
-
-  // Useful example
-  private def treeSubset(t: Tree[T])(implicit ord: Ordering[T]): Unit = {
-    require(isBinarySearchTree(t)(ord))
-    t match {
-      case Node(l, v, r) => {
-        val lSet = treeSet(l)
-        val rSet = treeSet(r)
-        assert(forall {
-          (lEl: T, rEl: T) => (lSet.contains(lEl) && rSet.contains(rEl)) ==> {
-            // check {ord.compare(rEl, v) >= 0}
-            // check {ord.compare(v, lEl) >= 0}
-            ord.nonStrictTransitivityLemma(rEl, v, lEl)
-            ord.compare(rEl, lEl) >= 0
-          }
-        })
-      }
-      case other => ()
-    }
-  }
 
 
 }
