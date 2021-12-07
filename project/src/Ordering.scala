@@ -75,6 +75,20 @@ trait Ordering[T] {
   } ensuring (_ => compare(y, x) >= 0)
 
   /**
+   *  Lemma proving if x > y then x >= y
+   */
+  def strictGreaterToNonStrictLemma(x: T, y: T): Unit = {
+    require(compare(x, y) > 0)
+  } ensuring(_ => compare(x, y) >= 0)
+
+  /**
+   *  Lemma proving if x < y then x <= y
+   */
+  def strictSamllerToNonStrictLemma(x: T, y: T): Unit = {
+    require(compare(x, y) < 0)
+  } ensuring(_ => compare(x, y) <= 0)
+
+  /**
    * Lemma proving if x >= y and y >= z then x >= z
    */
   def nonStrictTransitivityLemma(x: T, y: T, z: T): Unit = {
