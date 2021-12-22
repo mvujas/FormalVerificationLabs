@@ -331,7 +331,10 @@ case class SplayHeap[T](var tree: Tree[T] = Leaf()) extends CustomHeap[T] {
     require(isBinarySearchTree(h))
     val (l, r) = partition(x, h)
     Node(l, x, r)
-  } ensuring (isBinarySearchTree(_))
+  } ensuring (res =>
+    isBinarySearchTree(res) && 
+    (treeSet(res) subsetOf (treeSet(h) ++ Set(x)))
+  )
 
 
   private def treeDelMin(t: Tree[T])(implicit ord: Ordering[T]): Tree[T] = {
