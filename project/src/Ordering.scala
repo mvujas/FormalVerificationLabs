@@ -120,4 +120,9 @@ trait Ordering[T] {
       }
     }
   } ensuring (_ => compare(x, z) >= 0)
+
+
+  def selfEqualityLemma(x: T): Unit = {
+    assert(inverse(x, x))
+  } ensuring (_ => compare(x, x) == 0)
 }
