@@ -17,6 +17,9 @@ trait FunctionalHeap[T] {
    *  Returns the smallest element of the given functional heap if there is
    *    any. Otherwise, return None
    */
-  def getMin(): Option[T]
-  def isEmpty(): Boolean
+  def min: Option[T]
+  /**
+   *  Returns whether the given functional heap contains any elements
+   */
+  def isEmpty: Boolean
 }

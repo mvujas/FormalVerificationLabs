@@ -7,7 +7,8 @@ object math {
     0
 
   /**
-   * Lemma proving that for an arbitary integer x: signum(x) = -signum(-x)
+   * Lemma proving that for an arbitary integer x not susceptible to overflow
+   *  under negation the following holds: signum(x) = -signum(-x)
    */
   private def signumLemma1(x: Int): Unit = {
     require(x >= -2147483647 && x <= 2147483647)
