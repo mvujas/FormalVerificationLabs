@@ -396,6 +396,226 @@ object Trees {
       res
     } ensuring { isValidPartition(p, tree, ord)(_) }
 
+  private def partitionGreaterEmpty[T](p: T, tree: Tree[T])
+    (implicit ord: Ordering[T]): TreePartitionType[T] = {
+      require(isBinarySearchTree(tree) &&
+        !isTreeEmpty(tree) &&
+        ord.compare(treeRootValue(tree), p) > 0 &&
+        isTreeEmpty(leftSubTree(tree))
+      )
+      val Node(al, a, ar) = tree
+      assert {
+        ord.compare(a, p) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(p, a, ar)
+          treeGreaterEqThanValue(ar, p)
+        }
+      }
+      Tuple2[Tree[T], Tree[T]](Leaf(), tree)
+    } ensuring { isValidPartition(p, tree, ord)(_) }
+
+  private def partitionGreaterSmaller[T](p: T, tree: Tree[T], subParts: TreePartitionType[T])
+    (implicit ord: Ordering[T]): TreePartitionType[T] = {
+      require{
+        isBinarySearchTree(tree) &&
+        !isTreeEmpty(tree) &&
+        ord.compare(treeRootValue(tree), p) > 0 &&
+        !isTreeEmpty(leftSubTree(tree)) &&
+        ord.compare(treeRootValue(leftSubTree(tree)), p) <= 0 &&
+        isValidPartition(p, rightSubTree(leftSubTree(tree)), ord)(subParts)
+      }
+
+      assert{
+        ord.inverse(treeRootValue(leftSubTree(tree)), p) &&
+        ord.compare(p, treeRootValue(leftSubTree(tree))) >= 0
+      }
+
+      val Node(al, a, ar) = tree
+      val Node(bl, b, br) = al
+
+      assert {
+        ord.compare(a, p) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(p, a, ar)
+          treeGreaterEqThanValue(ar, p)
+        }
+      }
+
+      val (pl, pr) = subParts
+      val res = Tuple2[Tree[T], Tree[T]](
+        Node(bl, b, pl),
+        Node(pr, a, ar)
+      )
+
+      val setUnionProof =
+        (treeSet(res._1) == treeSet(bl) ++ treeSet(pl) ++ Set(b)) &&
+        (treeSet(res._2) == treeSet(pr) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(bl) ++ treeSet(pl) ++
+          Set(b) ++ treeSet(pr) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(br) == treeSet(pl) ++ treeSet(pr)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(bl) ++ treeSet(br) ++
+          Set(b) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(al) == treeSet(bl) ++ treeSet(br) ++ Set(b)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(al) ++ Set(a) ++
+          treeSet(ar)) &&
+        (treeSet(tree) == treeSet(al) ++ Set(a) ++ treeSet(ar)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(tree))
+
+      assert(setUnionProof)
+
+      val firstBST =
+        isBinarySearchTree(bl) &&
+        isBinarySearchTree(pl) &&
+        treeSmallerEqThanValue(bl, b) &&
+        (treeSet(pl) subsetOf treeSet(br)) &&
+        treeGreaterEqThanValue(br, b) &&
+        treeGreaterEqThanValue(pl, b) &&
+        isBinarySearchTree(res._1)
+
+      assert(firstBST)
+
+      val firstSmaller =
+        ord.compare(p, b) >= 0 &&
+        {
+          subtreeGreaterOrderingTransitivityLemma(p, b, bl)
+          treeSmallerEqThanValue(bl, p)
+        } &&
+        treeSmallerEqThanValue(pl, p) &&
+        treeSmallerEqThanValue(res._1, p)
+
+      assert(firstSmaller)
+
+      val secondBST =
+        isBinarySearchTree(pr) &&
+        isBinarySearchTree(ar) &&
+        treeGreaterEqThanValue(ar, a) &&
+        (treeSet(pr) subsetOf treeSet(br)) &&
+        (treeSet(br) subsetOf treeSet(al)) &&
+        (treeSet(pr) subsetOf treeSet(al)) &&
+        treeSmallerEqThanValue(al, a) &&
+        treeSmallerEqThanValue(pr, a) &&
+        isBinarySearchTree(res._2)
+
+      assert(secondBST)
+
+      val secondGreater =
+        ord.compare(a, p) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(p, a, ar)
+          treeGreaterEqThanValue(ar, p)
+        } &&
+        treeGreaterEqThanValue(pr, p) &&
+        treeGreaterEqThanValue(res._2, p)
+
+      assert(secondGreater)
+
+      res
+    } ensuring { isValidPartition(p, tree, ord)(_) }
+
+  private def partitionGreaterGreater[T](p: T, tree: Tree[T], subParts: TreePartitionType[T])
+    (implicit ord: Ordering[T]): TreePartitionType[T] = {
+      require{
+        isBinarySearchTree(tree) &&
+        !isTreeEmpty(tree) &&
+        ord.compare(treeRootValue(tree), p) > 0 &&
+        !isTreeEmpty(leftSubTree(tree)) &&
+        ord.compare(treeRootValue(leftSubTree(tree)), p) > 0 &&
+        isValidPartition(p, leftSubTree(leftSubTree(tree)), ord)(subParts)
+      }
+
+      assert{
+        ord.compare(treeRootValue(leftSubTree(tree)), p) >= 0
+      }
+
+      val Node(al, a, ar) = tree
+      val Node(bl, b, br) = al
+
+      assert {
+        ord.compare(a, p) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(p, a, ar)
+          treeGreaterEqThanValue(ar, p)
+        }
+      }
+
+      val (pl, pr) = subParts
+      val _2_right = Node(br, a, ar)
+      val res = Tuple2[Tree[T], Tree[T]](
+        pl,
+        Node(pr, b, _2_right)
+      )
+
+      val setUnionProof =
+        (treeSet(res._1) == treeSet(pl)) &&
+        (treeSet(res._2) == treeSet(pr) ++ Set(b) ++ treeSet(_2_right)) &&
+        (treeSet(_2_right) == treeSet(br) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(res._2) == treeSet(pr) ++ Set(b) ++ treeSet(br) ++
+          treeSet(ar) ++ Set(a)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(pl) ++ treeSet(pr) ++
+          Set(b) ++ treeSet(br) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(bl) == treeSet(pl) ++ treeSet(pr)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(bl) ++
+          Set(b) ++ treeSet(br) ++ treeSet(ar) ++ Set(a)) &&
+        (treeSet(al) == treeSet(bl) ++ Set(b) ++ treeSet(br)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(al) ++ treeSet(ar) ++
+          Set(a)) &&
+        (treeSet(res._1) ++ treeSet(res._2) == treeSet(tree))
+
+      assert(setUnionProof)
+
+      val firstBST = isBinarySearchTree(pl)
+
+      assert(firstBST)
+
+      val firstSmaller = treeSmallerEqThanValue(pl, p)
+
+      assert(firstSmaller)
+
+      val _2_rightBSTProof =
+        isBinarySearchTree(br) &&
+        isBinarySearchTree(ar) &&
+        treeGreaterEqThanValue(ar, a) &&
+        (treeSet(br) subsetOf treeSet(al)) &&
+        treeSmallerEqThanValue(al, a) &&
+        treeSmallerEqThanValue(br, a) &&
+        isBinarySearchTree(_2_right)
+
+      assert(_2_rightBSTProof)
+
+      val secondBST =
+        isBinarySearchTree(pr) &&
+        isBinarySearchTree(_2_right) &&
+        (treeSet(pr) subsetOf treeSet(bl)) &&
+        treeSmallerEqThanValue(bl, b) &&
+        treeSmallerEqThanValue(pr, b) &&
+        treeGreaterEqThanValue(br, b) &&
+        (treeSet(al) contains b) &&
+        treeSmallerEqThanValue(al, a) &&
+        treeGreaterEqThanValue(ar, a)
+        ord.compare(a, b) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(b, a, ar)
+          treeGreaterEqThanValue(ar, b)
+        } &&
+        treeGreaterEqThanValue(_2_right, b) &&
+        isBinarySearchTree(res._2)
+
+      assert(secondBST)
+
+      val secondGreater =
+        treeGreaterEqThanValue(pr, p) &&
+        ord.compare(b, p) >= 0 &&
+        {
+          subtreeSmallerOrderingTransitivityLemma(p, b, _2_right)
+          treeGreaterEqThanValue(_2_right, p)
+        } &&
+        treeGreaterEqThanValue(res._2, p)
+
+      assert(secondGreater)
+
+      res
+    } ensuring { isValidPartition(p, tree, ord)(_) }
+
   private def assumedPartition[T](p: T, tree: Tree[T])
     (implicit ord: Ordering[T]): TreePartitionType[T] = {
       require(isBinarySearchTree(tree))
@@ -406,6 +626,7 @@ object Trees {
 
   def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
     TreePartitionType[T] = {
+      // Measure
       decreases(tree)
       // Precondition
       require(isBinarySearchTree(tree))
@@ -423,11 +644,16 @@ object Trees {
             partitionSmallerGreater(p, tree, subParts)(ord)
           }
         }
-        case Node(al, a, ar) => ar match {
-          case Leaf() => assumedPartition(p, tree)(ord)
-          case Node(bl, b, br) if(ord.compare(b, p) <= 0) =>
-              assumedPartition(p, tree)(ord)
-          case Node(bl, b, br) => assumedPartition(p, tree)(ord)
+        case Node(al, a, ar) => al match {
+          case Leaf() => partitionGreaterEmpty(p, tree)(ord)
+          case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
+            val subParts = partition(p, br)(ord)
+            partitionGreaterSmaller(p, tree, subParts)(ord)
+          }
+          case Node(bl, b, br) => {
+            val subParts = partition(p, bl)(ord)
+            partitionGreaterGreater(p, tree, subParts)(ord)
+          }
         }
       }
     } ensuring { isValidPartition(p, tree, ord)(_) }
