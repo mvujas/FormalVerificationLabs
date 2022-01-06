@@ -8,6 +8,10 @@ object StainlessUtils {
   @extern
   def assume(b: Boolean): Unit = {} ensuring (_ => b)
 
+  def echo(b: Boolean): Unit = {
+    require(b)
+  } ensuring (_ => b)
+
   /**
    *  Returns whether the given predicate holds for all the elements of the
    *    given set
