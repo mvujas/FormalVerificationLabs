@@ -1,5 +1,6 @@
 import stainless.lang._
 import stainless.annotation._
+import stainless.collection._
 import stainless.proof._
 import StainlessUtils._
 import Trees._
@@ -8,9 +9,26 @@ object SplayHeap {
   /**
    *  Returns a new empty heap with the given ordering
    */
-  def createEmpty[T](implicit ord: Ordering[T]): SplayHeap[T] = (
+  def createEmpty[T](implicit ord: Ordering[T]): SplayHeap[T] = {
     new SplayHeap[T](Leaf[T](), ord)
-  ) ensuring (_.isEmpty)
+  } ensuring (_.isEmpty)
+
+  /**
+   *  Returns a heap containing all elements of the given list
+   */
+  def createFromList[T](l: List[T])(implicit ord: Ordering[T]):
+    FunctionalHeap[T] = (
+      l match {
+        case Nil() => createEmpty[T](ord)
+        case Cons(x, xs) => {
+          val subHeap = createFromList[T](xs)
+          assert(subHeap.insertLaw(x))
+          subHeap insert x
+        }
+      }
+    ) ensuring {
+      (res: FunctionalHeap[T]) => res.size == l.size && l.content == res.set
+    }
 }
 
 // In order to save an end user from having to pass a tree everytime it wants
@@ -21,33 +39,20 @@ case class SplayHeap[T] private(val tree: Tree[T], implicit val ord: Ordering[T]
 
   override def insert(element: T): FunctionalHeap[T] = {
     SplayHeap(binarySearchTreeSplayInsertion(tree, element)(ord), ord)
-  } ensuring { res =>
-    (treeSet(res.tree) subsetOf (treeSet(tree) ++ Set(element)))
   }
 
-  override def delMin(): FunctionalHeap[T] = (tree match {
+  override def delMin(): FunctionalHeap[T] = tree match {
     case Leaf() => SplayHeap(Leaf(), ord)
     case other => SplayHeap(getMinTreeEl(other)(ord)._1, ord)
-  }) ensuring { res =>
-    (isEmpty ==> res.isEmpty) &&
-    (!isEmpty ==> (
-      (treeSize(res.tree) + 1 == treeSize(tree)) &&
-      (treeSet(res.tree) subsetOf treeSet(tree))
-    ))
+  }
+
+  override def min: Option[T] = tree match {
+    case Leaf() => None[T]()
+    case other => Some[T](getMinTreeEl(other)(ord)._2)
   }
 
   override def isEmpty: Boolean = isTreeEmpty(tree)
-
-  override def min: Option[T] = (tree match {
-    case Leaf() => None[T]()
-    case other => Some[T](getMinTreeEl(other)(ord)._2)
-  }) ensuring {
-    res =>
-      (!isEmpty ==>  isMinTreeEl(tree, ord)(res.get)) &&
-      (isEmpty ==> res.isEmpty)
-  }
-
-
-
-
+  override def size: BigInt = treeSize(tree)
+  override def set: Set[T] = treeSet(tree)
+  override def ordering: Ordering[T] = ord
 }

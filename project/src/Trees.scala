@@ -699,8 +699,7 @@ object Trees {
    *  the specified ordering
    */
   def isMinTreeEl[T](tree: Tree[T], ord: Ordering[T])(value: T): Boolean =
-    treeSet(tree).contains(value) &&
-    setForall(treeSet(tree), (el: T) => ord.compare(el, value) >= 0)
+    isMinSetEl(treeSet(tree), ord)(value)
 
   /**
    * Trivial case for getting left-most element of the binary tree
@@ -768,7 +767,11 @@ object Trees {
 
       }
 
-      Tuple2[Tree[T], T](restOfTree, subTreeMin)
+
+      val res = Tuple2[Tree[T], T](restOfTree, subTreeMin)
+      assert(isMinTreeEl(tree, ord)(res._2))
+
+      res
     } ensuring { (res: Tuple2[Tree[T], T]) =>
       isMinTreeEl(tree, ord)(res._2) &&
       treeSize(res._1) + 1 == treeSize(tree) &&
@@ -802,6 +805,7 @@ object Trees {
       Node(l, element, r)
     } ensuring { res =>
       isBinarySearchTree(res) &&
-      (treeSet(res) subsetOf (treeSet(tree) ++ Set(element)))
+      (treeSet(res) == (treeSet(tree) ++ Set(element))) &&
+      (treeSize(res) == (treeSize(tree) + 1))
     }
 }

@@ -8,10 +8,6 @@ object StainlessUtils {
   @extern
   def assume(b: Boolean): Unit = {} ensuring (_ => b)
 
-  def echo(b: Boolean): Unit = {
-    require(b)
-  } ensuring (_ => b)
-
   /**
    *  Returns whether the given predicate holds for all the elements of the
    *    given set
@@ -19,4 +15,12 @@ object StainlessUtils {
   def setForall[T](set: Set[T], predicate: T => Boolean): Boolean = forall {
     (el: T) => set.contains(el) ==> predicate(el)
   }
+
+  /**
+   *  Checks whether the given value is the minimal element of the set under
+   *    the given ordering
+   */
+  def isMinSetEl[T](set: Set[T], ord: Ordering[T])(value: T): Boolean =
+    set.contains(value) &&
+    setForall(set, (el: T) => ord.compare(el, value) >= 0)
 }

@@ -1,5 +1,6 @@
 import stainless.lang._
 import stainless.annotation._
+import StainlessUtils._
 
 trait FunctionalHeap[T] {
   /**
@@ -22,4 +23,36 @@ trait FunctionalHeap[T] {
    *  Returns whether the given functional heap contains any elements
    */
   def isEmpty: Boolean
+  /**
+   *  Returns number of elements in the heap
+   */
+  def size: BigInt
+  /**
+   *  Returns all elemenets from the heap in form of a set
+   */
+  def set: Set[T]
+  /**
+   *  Returns ordering rule of the heap
+   */
+  def ordering: Ordering[T]
+
+  /**
+   *  Set of constraints that have to be held under insertion of a new element
+   */
+  @law
+  def insertLaw(element: T): Boolean = {
+    val res = this insert element
+    (res.size == size + 1) && (res.set == set ++ Set(element))
+  }
+
+  /**
+   *  Set of constraints that have to be held under deletion and retrieval of
+   *    the minimal element of the heap
+   */
+  @law
+  def minLaw: Boolean = {
+    (isEmpty ==> (delMin.isEmpty && min.isEmpty)) &&
+    (!isEmpty ==> (min.nonEmpty && isMinSetEl(set, ordering)(min.get) &&
+      delMin.size + 1 == size && delMin.set ++ Set(min.get) == set))
+  }
 }
