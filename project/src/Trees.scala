@@ -129,28 +129,6 @@ object Trees {
     }
   } ensuring (_ => treeGreaterEqThanValue(rightTree, smallerValue))
 
-  // def smallerThanLeftSmallerThanTreeLemma[T](tree: Tree[T], value: T)
-  //   (implicit ord: Ordering[T]): Unit = {
-  //   require(isBinarySearchTree(tree) && !isTreeEmpty(tree) &&
-  //     treeSmallerEqThanValue(rightSubTree(tree), value))
-  // } ensuring (_ => treeGreaterEqThanValue)
-
-  // def greaterThanRightGreaterThanTreeLemma[T](tree: Tree[T], value: T)
-  //   (implicit ord: Ordering[T]): Unit = {
-  //   require(isBinarySearchTree(tree) && !isTreeEmpty(tree) &&
-  //     treeSmallerEqThanValue(rightSubTree(tree), value))
-  //   val Node(l, x, r) = tree
-  //   assert(treeSmallerEqThanValue(r, value))
-  //   assert(
-  //     setForall(treeSet(r), (el: T) => {
-  //       ord.compare(el, x) >= 0 && ord.compare(value, el) >= 0 && {
-  //         ord.nonStrictTransitivityLemma(value, el, x)
-  //         ord.compare(value, x) >= 0
-  //       }
-  //     })
-  //   )
-  // } ensuring (_ => treeSmallerEqThanValue(tree, value))
-
   type TreePartitionType[T] = Tuple2[Tree[T], Tree[T]]
 
   def isValidPartition[T](p: T, tree: Tree[T],  ord: Ordering[T])
@@ -159,15 +137,10 @@ object Trees {
       isBinarySearchTree(treePartition._2)(ord) &&
       treeSmallerEqThanValue(treePartition._1, p)(ord) &&
       treeGreaterEqThanValue(treePartition._2, p)(ord) &&
-      ((treeSet(treePartition._1) ++ treeSet(treePartition._2)) == treeSet(tree))
+      ((treeSet(treePartition._1) ++ treeSet(treePartition._2)) == treeSet(tree)) &&
+      (treeSize(treePartition._1) + treeSize(treePartition._2) == treeSize(tree))
     }
 
-
-  private def partitionEcho[T](p: T, tree: Tree[T], parts: TreePartitionType[T])
-    (implicit ord: Ordering[T]): TreePartitionType[T] = {
-      require{ isValidPartition(p, tree, ord)(parts) }
-      parts
-    } ensuring { isValidPartition(p, tree, ord)(_) }
 
 
   private def partitionEmpty[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
@@ -249,6 +222,22 @@ object Trees {
         ((treeSet(res._1) ++ treeSet(res._2)) == treeSet(tree))
 
       assert(setUnionProof)
+
+      val sizeProof =
+        (treeSize(res._1) == treeSize(_1_left) + treeSize(pl) + 1) &&
+        (treeSize(_1_left) == treeSize(al) + 1 + treeSize(bl)) &&
+        (treeSize(res._1) == treeSize(al) + 1 + treeSize(bl) + treeSize(pl) + 1) &&
+        (treeSize(res._2) == treeSize(y)) &&
+        ((treeSize(res._1) + treeSize(res._2)) == (treeSize(al) + 1 +
+          treeSize(bl) + treeSize(pl) + 1 + treeSize(y))) &&
+        (treeSize(br) == treeSize(y) + treeSize(pl)) &&
+        (treeSize(ar) == treeSize(bl) + treeSize(br) + 1) &&
+        (treeSize(ar) == treeSize(bl) + treeSize(y) + treeSize(pl) + 1) &&
+        ((treeSize(res._1) + treeSize(res._2)) == (treeSize(al) + 1 +
+          treeSize(ar))) &&
+        ((treeSize(res._1) + treeSize(res._2)) == treeSize(tree))
+
+      assert(sizeProof)
 
       val secondGreater = treeGreaterEqThanValue(y, p)
       val secondBST = isBinarySearchTree(y)
@@ -346,6 +335,22 @@ object Trees {
         (treeSet(res._1) ++ treeSet(res._2) == treeSet(tree))
 
       assert(setUnionProof)
+
+      val sizeProof =
+        (treeSize(res._1) == treeSize(al) + treeSize(pl) + 1) &&
+        (treeSize(res._2) == treeSize(pr) + treeSize(br) + 1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(al) + treeSize(pl) +
+          1 + treeSize(pr) + treeSize(br) + 1) &&
+        (treeSize(bl) == treeSize(pl) + treeSize(pr)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(al) + 1 +
+          treeSize(bl) + treeSize(br) + 1) &&
+        (treeSize(ar) == treeSize(bl) + treeSize(br) + 1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(al) + 1 +
+          treeSize(ar)) &&
+        (treeSize(tree) == treeSize(al) + 1 + treeSize(ar)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(tree))
+
+      assert(sizeProof)
 
       val firstBST =
         isBinarySearchTree(al) &&
@@ -463,6 +468,22 @@ object Trees {
 
       assert(setUnionProof)
 
+      val sizeProof =
+        (treeSize(res._1) == treeSize(bl) + treeSize(pl) + 1) &&
+        (treeSize(res._2) == treeSize(pr) + treeSize(ar) + 1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(bl) + treeSize(pl) +
+          1 + treeSize(pr) + treeSize(ar) + 1) &&
+        (treeSize(br) == treeSize(pl) + treeSize(pr)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(bl) + treeSize(br) +
+          1 + treeSize(ar) + 1) &&
+        (treeSize(al) == treeSize(bl) + treeSize(br) + 1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(al) + 1 +
+          treeSize(ar)) &&
+        (treeSize(tree) == treeSize(al) + 1 + treeSize(ar)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(tree))
+
+      assert(sizeProof)
+
       val firstBST =
         isBinarySearchTree(bl) &&
         isBinarySearchTree(pl) &&
@@ -563,6 +584,24 @@ object Trees {
 
       assert(setUnionProof)
 
+      val sizeProof =
+        (treeSize(res._1) == treeSize(pl)) &&
+        (treeSize(res._2) == treeSize(pr) + 1 + treeSize(_2_right)) &&
+        (treeSize(_2_right) == treeSize(br) + treeSize(ar) + 1) &&
+        (treeSize(res._2) == treeSize(pr) + 1 + treeSize(br) +
+          treeSize(ar) + 1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(pl) + treeSize(pr) +
+          1 + treeSize(br) + treeSize(ar) + 1) &&
+        (treeSize(bl) == treeSize(pl) + treeSize(pr)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(bl) +
+          1 + treeSize(br) + treeSize(ar) + 1) &&
+        (treeSize(al) == treeSize(bl) + 1 + treeSize(br)) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(al) + treeSize(ar) +
+          1) &&
+        (treeSize(res._1) + treeSize(res._2) == treeSize(tree))
+
+      assert(sizeProof)
+
       val firstBST = isBinarySearchTree(pl)
 
       assert(firstBST)
@@ -616,14 +655,11 @@ object Trees {
       res
     } ensuring { isValidPartition(p, tree, ord)(_) }
 
-  private def assumedPartition[T](p: T, tree: Tree[T])
-    (implicit ord: Ordering[T]): TreePartitionType[T] = {
-      require(isBinarySearchTree(tree))
-      val res = Tuple2[Tree[T], Tree[T]](Leaf(), Leaf())
-      assume(isValidPartition(p, tree, ord)(res))
-      res
-    } ensuring { isValidPartition(p, tree, ord)(_) }
-
+  /**
+   * Partitions a BST into 2 BSTs where all elements of the first are smaller
+   *  than the given value, and all values of the second are greater than the
+   *  given value
+   */
   def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
     TreePartitionType[T] = {
       // Measure
@@ -657,491 +693,6 @@ object Trees {
         }
       }
     } ensuring { isValidPartition(p, tree, ord)(_) }
-
-  // Reports failure due to not knowing whether the function terminates.
-  //  Weirdly, sometimes it can infer by itself in my runs...
-  //  Also fulling full tuple2 constructor recommended as Stainless complains
-  //    otherwise.
-  //  Proof of postcondition is painfully slow, just postcondition took
-  //    around 220 seconds...
-  // def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
-  //       TreePartitionType[T] = {
-  //   // Metric
-  //   decreases(tree)
-  //   // Precondition
-  //   require(isBinarySearchTree(tree))
-  //   // Logic
-  //   tree match {
-  //     case Leaf() => Tuple2[Tree[T], Tree[T]](Leaf(), Leaf())
-  //     case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => {
-  //       assert {
-  //         ord.inverse(a, p) &&
-  //         ord.compare(p, a) >= 0 &&
-  //         {
-  //           subtreeGreaterOrderingTransitivityLemma(p, a, al)
-  //           setForall(treeSet(al), (el: T) => ord.compare(p, el) >= 0)
-  //         }
-  //       }
-  //
-  //       ar match {
-  //         case Leaf() => {
-  //           val res = Tuple2[Tree[T], Tree[T]](aTree, Leaf())
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
-  //           val (pl, y) = partition(p, br)
-  //           val _1_left = Node(al, a, bl)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(_1_left, b, pl),
-  //             y
-  //           )
-  //
-  //
-  //           assert {
-  //             (Set(b) subsetOf treeSet(ar)) &&
-  //             ord.compare(b, a) >= 0 &&
-  //             // Proof _1_left is a binary search tree
-  //             (treeSet(bl) subsetOf treeSet(ar)) &&
-  //             setForall(treeSet(bl), (el: T) => ord.compare(el, a) >= 0) &&
-  //             setForall(treeSet(al), (el: T) => ord.compare(a, el) >= 0) &&
-  //             isBinarySearchTree(al) &&
-  //             isBinarySearchTree(ar) &&
-  //             isBinarySearchTree(bl) &&
-  //             isBinarySearchTree(_1_left) &&
-  //             // Proof that treeSet(_1_left) is <= b
-  //             setForall(treeSet(al), (el: T) => {
-  //               ord.compare(a, el) >= 0 && {
-  //                 ord.nonStrictTransitivityLemma(b, a, el)
-  //                 ord.compare(b, el) >= 0
-  //               }
-  //             }) &&
-  //             setForall(treeSet(_1_left), (el: T) => ord.compare(b, el) >= 0) &&
-  //             // Proof that treeSet(pl) is <= b
-  //             (treeSet(pl) subsetOf treeSet(br)) &&
-  //             setForall(treeSet(pl), (el: T) => ord.compare(el, b) >= 0) &&
-  //             // Proof pl is a binary search tree
-  //             isBinarySearchTree(pl) &&
-  //             // Proof _1 is a binary search tree
-  //             isBinarySearchTree(res._1)
-  //           }
-  //
-  //           assert {
-  //             {
-  //               // p >= b
-  //               ord.monotonicInverseLemmaSmaller(b, p)
-  //               ord.compare(p, b) >= 0
-  //             } &&
-  //             setForall(treeSet(_1_left), (el: T) => {
-  //               ord.compare(b, el) >= 0 && {
-  //                 ord.nonStrictTransitivityLemma(p, b, el)
-  //                 ord.compare(p, el) >= 0
-  //               }
-  //             }) &&
-  //             setForall(treeSet(pl), (el: T) => ord.compare(p, el) >= 0)
-  //           }
-  //
-  //
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) => {
-  //           val (pl, pr) = partition(p, bl)
-  //
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(al, a, pl),
-  //             Node(pr, b, br)
-  //           )
-  //
-  //           assert {
-  //             (treeSet(pl) subsetOf treeSet(bl)) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             (treeSet(bl) subsetOf treeSet(ar)) &&
-  //             (treeSet(br) subsetOf treeSet(ar)) &&
-  //             (treeSet(ar) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //
-  //           assert {
-  //             setForall(treeSet(ar), (el: T) => ord.compare(el, a) >= 0) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             setForall(treeSet(bl), (el: T) => ord.compare(b, el) >= 0) &&
-  //             isBinarySearchTree(res._1) &&
-  //             isBinarySearchTree(res._2)
-  //           }
-  //
-  //           assert {
-  //             {
-  //               subtreeGreaterOrderingTransitivityLemma(p, a, al)
-  //               setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0)
-  //             } &&
-  //             {
-  //               subtreeSmallerOrderingTransitivityLemma(p, b, br)
-  //               setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0)
-  //             }
-  //           }
-  //
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //       }
-  //     }
-  //     case aTree @ Node(al, a, ar) => {
-  //       assert {
-  //         ord.compare(a, p) > 0 &&
-  //         {
-  //           ord.strictGreaterToNonStrictLemma(a, p)
-  //           ord.compare(a, p) >= 0
-  //         } &&
-  //         {
-  //           subtreeSmallerOrderingTransitivityLemma(p, a, ar)
-  //           setForall(treeSet(ar), (el: T) => ord.compare(el, p) >= 0)
-  //         }
-  //       }
-  //
-  //       al match {
-  //         case Leaf() => {
-  //           val res = Tuple2[Tree[T], Tree[T]](Leaf(), aTree)
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
-  //           val (pl, pr) = partition(p, br)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(bl, b, pl),
-  //             Node(pr, a, ar)
-  //           )
-  //
-  //           assert {
-  //             (treeSet(bl) subsetOf treeSet(al)) &&
-  //             (treeSet(br) subsetOf treeSet(al)) &&
-  //             (treeSet(pl) subsetOf treeSet(br)) &&
-  //             (treeSet(pr) subsetOf treeSet(br)) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //
-  //           assert {
-  //             // pl subset of br and all elements of br are greater than b
-  //             isBinarySearchTree(res._1) &&
-  //             // pr subset of br which is a subset of al and
-  //             //    all elements of al are smaller than a
-  //             (treeSet(pr) subsetOf treeSet(al)) &&
-  //             isBinarySearchTree(res._2)
-  //           }
-  //
-  //           assert {
-  //             // Proven before the match that all elements of ar >= p, then also
-  //             //    a >= p, and finally elements of pr >= p by induction
-  //             //    hypothesis
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             // Proof that all elements of the first element of the tuple are
-  //             //    <= p, we have to prove that only the elements of bl are <= p
-  //             //    which follows from transitivity
-  //             ord.compare(b, p) <= 0 &&
-  //             ord.inverse(b, p) &&
-  //             ord.compare(p, b) >= 0 &&
-  //             {
-  //               subtreeGreaterOrderingTransitivityLemma(p, b, bl)
-  //               setForall(treeSet(bl), (el: T) => ord.compare(p, el) >= 0)
-  //             } &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0)
-  //           }
-  //
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case bTree @ Node(bl, b, br) => {
-  //           val (pl, pr) = partition(p, bl)
-  //           val _2_right = Node(br, a, ar)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             pl,
-  //             Node(pr, b, _2_right)
-  //           )
-  //
-  //           assert {
-  //             isBinarySearchTree(bTree) &&
-  //             setForall(treeSet(bl), (el: T) => ord.compare(b, el) >= 0) &&
-  //             setForall(treeSet(br), (el: T) => ord.compare(el, b) >= 0)
-  //           }
-  //
-  //           assert {
-  //             (treeSet(pl) subsetOf treeSet(bl)) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             (treeSet(bl) subsetOf treeSet(al)) &&
-  //             (treeSet(br) subsetOf treeSet(al))  &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(_2_right) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //
-  //           assert {
-  //             isBinarySearchTree(res._1) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0)
-  //           }
-  //
-  //           assert {
-  //             isBinarySearchTree(br) &&
-  //             isBinarySearchTree(ar) &&
-  //             (treeSet(br) subsetOf treeSet(al)) &&
-  //             setForall(treeSet(br), (el: T) => ord.compare(a, el) >= 0) &&
-  //             isBinarySearchTree(_2_right) &&
-  //             isBinarySearchTree(pr) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             setForall(treeSet(pr), (el: T) => ord.compare(b, el) >= 0) &&
-  //             setForall(treeSet(br), (el: T) => ord.compare(el, b) >= 0) &&
-  //             (ord.compare(a, b) >= 0) &&
-  //             {
-  //               subtreeSmallerOrderingTransitivityLemma(b, a, ar)
-  //               setForall(treeSet(ar), (el: T) => ord.compare(el, b) >= 0)
-  //             } &&
-  //             setForall(treeSet(_2_right), (el: T) => ord.compare(el, b) >= 0) &&
-  //             isBinarySearchTree(res._2)
-  //           }
-  //
-  //           assert {
-  //             setForall(treeSet(pr), (el: T) => ord.compare(el, p) >= 0) &&
-  //             ord.compare(b, p) > 0 &&
-  //             {
-  //               ord.strictGreaterToNonStrictLemma(b, p)
-  //               ord.compare(b, p) >= 0
-  //             } &&
-  //             {
-  //               subtreeSmallerOrderingTransitivityLemma(p, b, _2_right)
-  //               setForall(treeSet(_2_right), (el: T) => ord.compare(el, p) >= 0)
-  //             } &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0)
-  //           }
-  //
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //       }
-  //     }
-  //   }
-  // } ensuring { res => isBinarySearchTree(res._1)(ord) &&
-  //   isBinarySearchTree(res._2)(ord) &&
-  //   setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //   setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //   (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //   (treeSet(res._2) subsetOf treeSet(tree))
-  // }
-  // def partition[T](p: T, tree: Tree[T])(implicit ord: Ordering[T]):
-  //       TreePartitionType[T] = {
-  //   // Metric
-  //   decreases(tree)
-  //   // Precondition
-  //   require(isBinarySearchTree(tree))
-  //   // Logic
-  //   tree match {
-  //     case Leaf() => Tuple2[Tree[T], Tree[T]](Leaf(), Leaf())
-  //     case aTree @ Node(al, a, ar) if(ord.compare(a, p) <= 0) => {
-  //       assert {
-  //         ord.inverse(a, p) &&
-  //         ord.compare(p, a) >= 0 &&
-  //         {
-  //           subtreeGreaterOrderingTransitivityLemma(p, a, al)
-  //           setForall(treeSet(al), (el: T) => ord.compare(p, el) >= 0)
-  //         }
-  //       }
-  //
-  //       ar match {
-  //         case Leaf() => {
-  //           val res = Tuple2[Tree[T], Tree[T]](aTree, Leaf())
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) if(ord.compare(b, p) <= 0) => {
-  //           val (pl, y) = partition(p, br)
-  //           val _1_left = Node(al, a, bl)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(_1_left, b, pl),
-  //             y
-  //           )
-  //
-  //           assume {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) => {
-  //           val (pl, pr) = partition(p, bl)
-  //
-  //           assert{
-  //             (treeSet(pl) subsetOf treeSet(bl)) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             isBinarySearchTree(pl) &&
-  //             isBinarySearchTree(pr)
-  //           }
-  //
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(al, a, pl),
-  //             Node(pr, b, br)
-  //           )
-  //
-  //           assert {
-  //             (treeSet(pl) subsetOf treeSet(bl)) &&
-  //             (treeSet(pr) subsetOf treeSet(bl)) &&
-  //             (treeSet(bl) subsetOf treeSet(ar)) &&
-  //             (treeSet(br) subsetOf treeSet(ar)) &&
-  //             (treeSet(ar) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //
-  //           assert {
-  //             {
-  //               subsetSmallerEqTransitivityLemma(treeSet(pl), treeSet(ar), a)
-  //               subsetGreaterEqTransitivityLemma(treeSet(pr), treeSet(bl), b)
-  //               isBinarySearchTree(res._1) && isBinarySearchTree(res._2)
-  //             }
-  //           }
-  //
-  //           assert {
-  //             {
-  //               subtreeGreaterOrderingTransitivityLemma(p, a, al)
-  //               setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0)
-  //             } &&
-  //             {
-  //               subtreeSmallerOrderingTransitivityLemma(p, b, br)
-  //               setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0)
-  //             }
-  //           }
-  //
-  //           check {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //       }
-  //     }
-  //     case aTree @ Node(al, a, ar) => {
-  //       assert {
-  //         ord.compare(a, p) > 0 &&
-  //         {
-  //           ord.strictGreaterToNonStrictLemma(a, p)
-  //           ord.compare(a, p) >= 0
-  //         } &&
-  //         {
-  //           subtreeSmallerOrderingTransitivityLemma(p, a, ar)
-  //           setForall(treeSet(ar), (el: T) => ord.compare(el, p) >= 0)
-  //         }
-  //       }
-  //
-  //       al match {
-  //         case Leaf() => {
-  //           val res = Tuple2[Tree[T], Tree[T]](Leaf(), aTree)
-  //           assume {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case Node(bl, b, br) if (ord.compare(b, p) <= 0) => {
-  //           val (pl, pr) = partition(p, br)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             Node(bl, b, pl),
-  //             Node(pr, a, ar)
-  //           )
-  //
-  //           assume {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //         case bTree @ Node(bl, b, br) => {
-  //           val (pl, pr) = partition(p, bl)
-  //           val _2_right = Node(br, a, ar)
-  //           val res = Tuple2[Tree[T], Tree[T]](
-  //             pl,
-  //             Node(pr, b, _2_right)
-  //           )
-  //
-  //           assume {
-  //             isBinarySearchTree(res._1) && isBinarySearchTree(res._2) &&
-  //             setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //             setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //             (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //             (treeSet(res._2) subsetOf treeSet(tree))
-  //           }
-  //           res
-  //         }
-  //       }
-  //     }
-  //   }
-  // } ensuring { res => isBinarySearchTree(res._1)(ord) &&
-  //   isBinarySearchTree(res._2)(ord) &&
-  //   setForall(treeSet(res._1), (el: T) => ord.compare(p, el) >= 0) &&
-  //   setForall(treeSet(res._2), (el: T) => ord.compare(el, p) >= 0) &&
-  //   (treeSet(res._1) subsetOf treeSet(tree)) &&
-  //   (treeSet(res._2) subsetOf treeSet(tree))
-  // }
-  //
-  // def subsetGreaterEqTransitivityLemma[T](a: Set[T], b: Set[T], x: T)(implicit ord: Ordering[T]): Unit = {
-  //   require((a subsetOf b) && setForall(b, (el: T) => ord.compare(x, el) >= 0))
-  // } ensuring { _ => setForall(a, (el: T) => ord.compare(x, el) >= 0) }
-  //
-  // def subsetSmallerEqTransitivityLemma[T](a: Set[T], b: Set[T], x: T)(implicit ord: Ordering[T]): Unit = {
-  //   require((a subsetOf b) && setForall(b, (el: T) => ord.compare(el, x) >= 0))
-  // } ensuring { _ => setForall(a, (el: T) => ord.compare(el, x) >= 0) }
 
   /**
    * Checks whether the given value is the minimal element of the tree under
