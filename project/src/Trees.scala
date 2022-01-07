@@ -743,35 +743,51 @@ object Trees {
       val Node(l, v, r) = tree
       val subTreeMinPair = getMinTreeEl(l)(ord)
       val subTreeMin = subTreeMinPair._2
+
       val restOfTree = Node(subTreeMinPair._1, v, r)
-      val rSet = treeSet(r)
-      assert{
+
+      val minElProof =
+        (treeSet(l) contains subTreeMin) &&
+        treeGreaterEqThanValue(l, subTreeMin) &&
         ord.compare(v, subTreeMin) >= 0 &&
-        setForall(rSet, (el: T) => ord.compare(el, v) >= 0 && {
-          ord.nonStrictTransitivityLemma(el, v, subTreeMin)
-          ord.compare(el, subTreeMin) >= 0
-        })
-      }
+        treeGreaterEqThanValue(r, v) &&
+        {
+            subtreeSmallerOrderingTransitivityLemma(subTreeMin, v, r)
+            treeGreaterEqThanValue(r, subTreeMin)
+        } &&
+        treeGreaterEqThanValue(tree, subTreeMin) &&
+        isMinTreeEl(tree, ord)(subTreeMin)
 
-      assert{
+      assert(minElProof)
+
+      val bstProof =
         (treeSet(subTreeMinPair._1) subsetOf treeSet(l)) &&
+        treeSmallerEqThanValue(l, v) &&
+        treeSmallerEqThanValue(subTreeMinPair._1, v) &&
+        treeGreaterEqThanValue(r, v) &&
         isBinarySearchTree(subTreeMinPair._1) &&
+        isBinarySearchTree(r) &&
         isBinarySearchTree(restOfTree)
-      }
 
-      assert {
+      assert(bstProof)
+
+      val setProof =
         (treeSet(tree) == treeSet(l) ++ treeSet(r) ++ Set(v)) &&
         (treeSet(l) == treeSet(subTreeMinPair._1) ++ Set(subTreeMin)) &&
         (treeSet(tree) ==  treeSet(subTreeMinPair._1) ++ Set(subTreeMin) ++ treeSet(r) ++ Set(v)) &&
         (treeSet(restOfTree) == treeSet(subTreeMinPair._1) ++ Set(v) ++ treeSet(r))
 
-      }
+      assert(setProof)
 
+      val sizeProof =
+        (treeSize(tree) == treeSize(l) + treeSize(r) + 1) &&
+        (treeSize(l) == treeSize(subTreeMinPair._1) + 1) &&
+        (treeSize(tree) ==  treeSize(subTreeMinPair._1) + 1 + treeSize(r) + 1) &&
+        (treeSize(restOfTree) == treeSize(subTreeMinPair._1) + 1 + treeSize(r))
 
-      val res = Tuple2[Tree[T], T](restOfTree, subTreeMin)
-      assert(isMinTreeEl(tree, ord)(res._2))
+      assert(sizeProof)
 
-      res
+      Tuple2[Tree[T], T](restOfTree, subTreeMin)
     } ensuring { (res: Tuple2[Tree[T], T]) =>
       isMinTreeEl(tree, ord)(res._2) &&
       treeSize(res._1) + 1 == treeSize(tree) &&

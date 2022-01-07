@@ -3,10 +3,12 @@ import stainless.annotation._
 
 object StainlessUtils {
   /**
-   *  Debugging feature that 'lies' to stainless that the given boolean holds
+   *  Debugging feature that 'lies' to stainless that the given boolean holds.
+   *    Set to private to make sure it is not used anywhere outside of this
+   *    object
    */
   @extern
-  def assume(b: Boolean): Unit = {} ensuring (_ => b)
+  private def assume(b: Boolean): Unit = {} ensuring (_ => b)
 
   /**
    *  Returns whether the given predicate holds for all the elements of the
