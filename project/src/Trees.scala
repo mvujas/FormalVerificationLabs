@@ -62,10 +62,19 @@ object Trees {
     case Node(l, v, r) => Set(v) ++ treeSet(l) ++ treeSet(r)
   }
 
+
+  /**
+   *  Returns whether every value in the given tree is greater or equal than the
+   *    given value
+   */
   def treeGreaterEqThanValue[T](tree: Tree[T], value: T)
     (implicit ord: Ordering[T]): Boolean =
       setForall(treeSet(tree), (el: T) => ord.compare(el, value) >= 0)
 
+  /**
+   *  Returns whether every value in the given tree is smaller or equal than the
+   *    given value
+   */
   def treeSmallerEqThanValue[T](tree: Tree[T], value: T)
     (implicit ord: Ordering[T]): Boolean =
       setForall(treeSet(tree), (el: T) => ord.compare(value, el) >= 0)
@@ -813,7 +822,7 @@ object Trees {
     }
 
   /**
-   * Inserts an element in a BST under given ordering using splaying
+   * Inserts an element in a BST under given ordering using splay operation
    */
   def binarySearchTreeSplayInsertion[T](tree: Tree[T], element: T)(implicit ord: Ordering[T]): Tree[T] = {
       require(isBinarySearchTree(tree)(ord))
